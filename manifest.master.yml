@@ -1,0 +1,33 @@
+plugin:
+  name: formula-columns
+  version: "1"
+  l10n: l10n/formula-columns-loca.csv
+  displayname:
+    de-DE: Formula Columns
+    en-US: Formula Columns
+  webfrontend:
+    url: FormulaColumns.js
+
+base_url_prefix: "webfrontend"
+
+callbacks:
+  db_pre_save:
+    steps:
+      - name: "execute formula columns"
+        callback: formula_columns
+    callbacks:
+      formula_columns:
+        exec:
+          service: "node"
+          commands:
+            - prog: "node"
+              stdin:
+                type: body
+              stdout:
+                type: body
+              args:
+                - type: "value"
+                  value: "%_exec.pluginDir%/server/FormulaColumnsServer.js"
+                - type: "value"
+                  value: "%info.json%"
+
