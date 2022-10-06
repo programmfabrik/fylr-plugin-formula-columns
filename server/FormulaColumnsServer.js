@@ -3,66 +3,64 @@ const lib = require('../lib/js/lib.js')
 const info = JSON.parse(process.argv[2])
 process.stdin.setEncoding('utf8');
 
-let schema = null // global to manage schema
-let schemaPromise = lib.get(info.api_url+"/api/v1/schema/user/CURRENT?access_token="+info.api_user_access_token)
+console.error("huu")
 
-let stdinPromise = new Promise((resolve, reject) => {
-	let input = ""
-	process.stdin.on('data', (d) => {
-		try {
-			input += d.toString()
-		} catch(e) {
-			console.error("Could not read input into string: ${e.message}", e.stack)
-			reject()
+// updateObj updates the given object obj, using the
+// provided mask.
+function updateObj(mask, objNew, objCurr, dataPath) {
+	let changed = false
+	let dataPath2 = dataPath.slice(0)
+	dataPath2.push(objNew)
+	for (const colI in mask._columns) {
+		let col = mask._columns[colI]
+		if (col.custom_settings.script) {
+			if (!col.custom_settings.func) {
+				eval("col.custom_settings.func = function(objNew, objCurr, dataPath) {" + col.custom_settings.script + ";}")
+			}
+			objNew[col.name] = col.custom_settings.func(objNew, objCurr, dataPath)
+			changed = true
 		}
-	});
-	process.stdin.on('end', () => {
-		try {
-			data = JSON.parse(input)
-			delete(data.info)
-			resolve(data)
-		} catch (e) {
-			console.error("Could not parse input: ${e.message}", e.stack)
-			reject()
-		}
-	})
-});
-
-byTable = (tableName) => {
-	for(var i=0; i < schema.tables.length; i++) {
-		if (schema.tables[i].name === tableName) {
-			return schema.tables[i]
-		}
-	}
-	return null
-}
-
-Promise.all([schemaPromise, stdinPromise]).then(
-	(data) => {
-		schema = data[0]
-		lib.sendDV(data)
-		let objects = data[1].objects
-		let changed = false
-		let objsChanged = []
-		for(var i=0; i < objects.length; i++) {
-			let obj = objects[i]
-			let tbl = byTable(obj._objecttype)
-			// console.error("tbl", tbl)
-			for (var j=0; j < tbl.columns.length; j++) {
-				let col = tbl.columns[j]
-				if (col.custom_settings.script) {
-					obj[obj._objecttype][col.name] = eval("(function(objNew) {"+col.custom_settings.script+";})(obj)")
-					// console.error("col", col.name, "script", col.custom_settings.script, val)
+		if (col.kind == "link") {
+			let nested = objNew[col.name]
+			let nestedCurr
+			if (objCurr) {
+				nestedCurr = objCurr[col.name]
+			}
+			for (let i=0; i < nested.length; i++) {
+				let nestedCurrI
+				if (nestedCurr) {
+					nestedCurrI = nestedCurr[i]
+				}
+				if (updateObj(col._mask, nested[i], nestedCurrI, dataPath2)) {
 					changed = true
 				}
 			}
-			if (changed) {
+		}
+	}
+	return changed
+}
+
+Promise.all([lib.getSchema(info), lib.getStdin()]).then(
+	async (data) => {
+		let schema = data[0]
+		let objects = data[1].objects
+		let objsChanged = []
+		// await lib.sendDV(objects)
+		for (var i = 0; i < objects.length; i++) {
+			let obj = objects[i]
+			let current = obj._current
+			let currObj = null
+			if (current) {
+				currObj = current[obj._objecttype]
+			}
+			if (updateObj(schema[obj._objecttype], obj[obj._objecttype], currObj, [obj])) {
 				objsChanged.push(obj)
 			}
 		}
-		console.log(JSON.stringify({"objects": objsChanged}))
+		// await lib.sendDV(objsChanged)
+		console.log(JSON.stringify({ "objects": objsChanged }))
 	}
-).catch((e) =>  {
+).catch((e) => {
+	console.error(e)
 	process.exit(1)
 })
-
