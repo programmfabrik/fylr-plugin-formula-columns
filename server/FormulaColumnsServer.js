@@ -5,7 +5,9 @@ process.stdin.setEncoding('utf8');
 
 // updateObj updates the given object obj, using the
 // provided mask.
-function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr) {
+async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr) {
+	// await lib.sendDV(JSON.stringify({"path": dataPath, "data": objNew}))
+
 	let changed = false
 	let dataPath2 = dataPath.slice(0)
 	dataPath2.push(objNew)
@@ -20,20 +22,24 @@ function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr) {
 			}
 			objNew[col.name] = col.custom_settings.func(objNew, objCurr, dataPath, dataPathCurr)
 			changed = true
+			// await lib.sendDV(JSON.stringify({"col": col}))
 		}
-		if (col.kind == "link") {
+		if (col.kind == "link" || col.kind == "reverse_link") {
 			let nested = objNew[col.name]
-			let nestedCurr
-			if (objCurr) {
-				nestedCurr = objCurr[col.name]
-			}
-			for (let i=0; i < nested.length; i++) {
-				let nestedCurrI
-				if (nestedCurr) {
-					nestedCurrI = nestedCurr[i]
+			// await lib.sendDV(JSON.stringify({ "col": col, "objNew": objNew, "nested": nested, "len": nested?.length }))
+			if (nested?.length) {
+				let nestedCurr
+				if (objCurr) {
+					nestedCurr = objCurr[col.name]
 				}
-				if (updateObj(col._mask, nested[i], nestedCurrI, dataPath2, dataPathCurr2)) {
-					changed = true
+				for (let i = 0; i < nested.length; i++) {
+					let nestedCurrI
+					if (nestedCurr) {
+						nestedCurrI = nestedCurr[i]
+					}
+					if (updateObj(col._mask, nested[i], nestedCurrI, dataPath2, dataPathCurr2)) {
+						changed = true
+					}
 				}
 			}
 		}
@@ -55,7 +61,7 @@ Promise.all([lib.getSchema(info), lib.getStdin()]).then(
 				currObj = current[obj._objecttype]
 			}
 			// dataPath starts with top level, we already add it here
-			if (updateObj(schema[obj._objecttype], obj[obj._objecttype], currObj, [obj], [current])) {
+			if (await updateObj(schema[obj._objecttype], obj[obj._objecttype], currObj, [obj], [current])) {
 				objsChanged.push(obj)
 			}
 		}
