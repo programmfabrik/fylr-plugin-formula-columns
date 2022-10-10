@@ -1,99 +1,54 @@
-# fylr-ejc-plugin
-Plugin to support EJC classes
+# fylr-formula-columns-plugin
+
+Plugin for FYLR to store computed values in most column types using a small Javascript snippet.
 
 ## Installation
 
-The latest version of this plugin can be found [here](https://github.com/programmfabrik/fylr-plugin-ejc/releases/latest/download/fylr-plugin-ejc.zip).
+The latest plugin can be download from [Github](https://github.com/programmfabrik/fylr-plugin-formula-columns/releases/latest/download/fylr-plugin-formula-columns.zip). Latest release notes can be found [here](https://github.com/programmfabrik/fylr-plugin-formula-columns/releases).
 
-The ZIP can be downloaded and installed using the plugin manager, or used directly (recommended).
+## Web frontend
 
-Github has an overwiew page to get a list of [all release](https://github.com/programmfabrik/fylr-plugin-ejc/releases/).
+After activation of the plugin, the web frontend shows custom settings for "formula columns" in "Data model > Object type > Columns > Option".
 
-## Config endpoint
+There a Javascript can be defined which calculates the value of the column during the "db_pre_save" callback phase which runs on /api/db before objects are inserted into the database. A "debug" option exists to store an event of type "FORMULA_COLUMNS_DEBUG" which helps debugging.
 
-Use the following endpoints to work with preferences:
+If the formula throws an Exception, an event of type "FORMULA_COLUMNS_ERROR" is stored.
 
-### `GET /api/v1/config/plugin/ejc/config`
+## /api/schema
 
-Returns all preferences known to the plugin. Currently there is only `prefs` available.
+In /api/schema the custom setting looks like this:
 
-For access the [GJSON Syntax](https://github.com/tidwall/gjson/blob/master/SYNTAX.md) is used. For that the path is converted to **GJSON** by replacing `/` with `.`. `.` is replaced by `\.`. Make sure to escape all path elements using the URL % escape notation. A `#` becomes a `%23`.
-
-### `POST /api/v1/config/plugin/ejc/config/prefs`
-
-Post all prefs, supported top level keys are:
-
-* `viewsets`
-
-To access deeper members of JSON data, [SJSON](https://github.com/tidwall/sjson) is used. The GET rules for path replacements are applied for SJSON too, see the Example section for an example.
-
-## Examples
-
-### Replace all prefs with new data
-
-```bash
-> curl -X 'POST' -d '{"viewsets": {"views": [{"a": "b"},{"c": "d"}]}}' -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost/api/v1/config/plugin/ejc/config/prefs
+```json
 {
-    "viewsets": {
-        "views": [
-            {
-                "a": "b"
-            },
-            {
-                "c": "d"
-            },
-        ]
-    },
-    "viewsets:info": {
-        "is_default": false
-    }
-}
-```
-
-### Append an deeper nested item
-
-```bash
-> curl -X 'POST' -d '{"e": "f"}' -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost/api/v1/config/plugin/ejc/config/prefs/viewsets/views/-1
-null
-```
-`null` is returned, because the `-1` doesn't work as a `GJSON` path.
-
-### Delete the first item in viewsets.views
-
-```bash
-> curl -X 'DELETE' -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost/api/v1/config/plugin/ejc/config/prefs/viewsets/views/0
-{
-    "c": "d"
-}
-```
-
-### Get all prefs of the plugin
-
-```bash
-> curl -X 'GET' -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost/api/v1/config/plugin/ejc/config
-{
-    "prefs": {
-        "viewsets": {
-            "views": [
-                {
-                    "c": "d"
-                },
-                {
-                    "e": "f"
-                }
-            ]
-        },
-        "viewsets:info": {
-            "is_default": false
+    "custom_setting": {
+        "formula-columns": {
+            "debug": false,
+            "script": "... snippet ..."
         }
     }
 }
 ```
 
-### Deep filter prefs
-```bash
-> curl -X 'GET' -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost/api/v1/config/plugin/ejc/config/prefs/viewsets/views/%23(c=d)/c"
-"d"
+
+## /api/db
+
+The plugin works as `db_pre_save` plugin and as such it used the `_all_fields` mask with all object data present to calculate the fields. The callback receives the current context of the data cell and writes back the result into the JSON response of the plugin.
+
+## Javascript
+
+The Javscript snippet is defined as the body of the function
+
+```
+function (objNew, objCurr, dataPath, dataPathCurr) {
+    ... snippet as defined in the web frontend ...
+}
 ```
 
+It is executed using `eval`, a `try..catch` catches Exception. If an Exception is caught the event is written using the type `FORMULA_COLUMNS_ERROR`.
 
+* `objNew`: The new data of the currently saved object. This includes the record for top level objects, the nested record for nested objects.
+* `objCurr`: This data is the data as found in the database. It represents the old / current version of the data.
+* `dataPath`: During the recursive crawling of the data, the dataPath is extended for each iteration. It contains the path to the data starting from the top level.
+* `dataPathCurr`: Same as `dataPath` but for the current object data.
+
+> A known limitation is that the callback for a nested record does not know which record idx it is currently in.
