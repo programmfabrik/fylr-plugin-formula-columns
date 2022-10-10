@@ -108,6 +108,8 @@ Promise.all([lib.getSchema(info), lib.getStdin()]).then(
 						"log": log
 					}
 				}
+			}).then((data) => {
+				console.error(data);
 			})
 		}
 	}
