@@ -31,3 +31,6 @@ callbacks:
                 - type: "value"
                   value: "%info.json%"
 
+custom_events:
+  FORMULA_COLUMNS_DEBUG: {}
+  FORMULA_COLUMNS_ERROR: {}

@@ -6,7 +6,7 @@ process.stdin.setEncoding('utf8');
 
 // updateObj updates the given object obj, using the
 // provided mask.
-function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr) {
+function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 	let changed = false
 	let dataPath2 = dataPath.slice(0)
 	dataPath2.push(objNew)
@@ -14,11 +14,31 @@ function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr) {
 	dataPathCurr2.push(objCurr)
 	for (const colI in mask._columns) {
 		let col = mask._columns[colI]
-		if (col.custom_settings.script) {
-			if (!col.custom_settings.func) {
-				eval("col.custom_settings.func = function(objNew, objCurr, dataPath) {" + col.custom_settings.script + ";}")
+		let settings = col.custom_settings["formula-columns"]
+		if (settings?.script) {
+			let runScript = "function(objNew, objCurr, dataPath) {" + settings.script + ";}"
+			let logEntry = {
+				mask: mask,
+				objNew: objNew,
+				objCurr: objCurr,
+				dataPath: dataPath,
+				dataPathCurr: dataPathCurr,
+				column: col,
+				eval: runScript,
 			}
-			objNew[col.name] = col.custom_settings.func(objNew, objCurr, dataPath, dataPathCurr)
+			try {
+				if (!settings.func) {
+					eval("settings.func = "+runScript)
+				}
+				objNew[col.name] = settings.func(objNew, objCurr, dataPath, dataPathCurr)
+				if (settings.debug) {
+					logEntry.value = objNew[col.name]
+					log.push(logEntry)
+				}
+			} catch (e) {
+				logEntry.error = e
+				log.push(logEntry)
+			}
 			changed = true
 			// await lib.sendDV(JSON.stringify({"col": col}))
 		}
@@ -41,7 +61,7 @@ function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr) {
 					} else {
 						subMask = col._mask
 					}
-					if (updateObj(subMask, nested[i], nestedCurrI, dataPath2, dataPathCurr2)) {
+					if (updateObj(subMask, nested[i], nestedCurrI, dataPath2, dataPathCurr2, log)) {
 						changed = true
 					}
 				}
@@ -52,10 +72,11 @@ function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr) {
 }
 
 Promise.all([lib.getSchema(info), lib.getStdin()]).then(
-	(data) => {
+	async (data) => {
 		let schema = data[0]
 		let objects = data[1].objects
 		let objsChanged = []
+		let log = []
 		for (var i = 0; i < objects.length; i++) {
 			let obj = objects[i]
 			let current = obj._current
@@ -64,13 +85,31 @@ Promise.all([lib.getSchema(info), lib.getStdin()]).then(
 				currObj = current[obj._objecttype]
 			}
 			// dataPath starts with top level, we already add it here
-			if (updateObj(schema[obj._objecttype], obj[obj._objecttype], currObj, [obj], [current])) {
+			if (updateObj(schema[obj._objecttype], obj[obj._objecttype], currObj, [obj], [current], log)) {
 				objsChanged.push(obj)
 			}
 		}
-		// huhu2
-		// await lib.sendDV(objsChanged)
+		// return changed objects
 		console.log(JSON.stringify({ "objects": objsChanged }))
+
+		// send event to api, if log entries exist
+		if (log.length > 0) {
+			let evType = "FORMULA_COLUMNS_DEBUG"
+			for (var i = 0; i < log.length; i++) {
+				if (log[i].error) {
+					evType = "FORMULA_COLUMNS_ERROR"
+					break
+				}
+			}
+			await lib.storeEvent(info, {
+				"event": {
+					"type": evType,
+					"info": {
+						"log": log
+					}
+				}
+			})
+		}
 	}
 ).catch((e) => {
 	console.error(e)
