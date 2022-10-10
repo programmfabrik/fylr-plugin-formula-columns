@@ -16,7 +16,7 @@ function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 		let col = mask._columns[colI]
 		let settings = col.custom_settings["formula-columns"]
 		if (settings?.script) {
-			let runScript = "function(objNew, objCurr, dataPath) {" + settings.script + ";}"
+			let runScript = "function(objNew, objCurr, dataPath, dataPathCurr) {" + settings.script + ";}"
 			let logEntry = {
 				mask: mask,
 				objNew: objNew,
