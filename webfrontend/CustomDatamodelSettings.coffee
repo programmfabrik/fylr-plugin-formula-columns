@@ -34,25 +34,41 @@ class CustomDatamodelSettings extends SchemaPlugin
 		return "formula-columns"
 
 	openEditorPopover: (editorBtn) ->
+		tmpData =
+			script: editorBtn.getData().script or ""
+
+		editorWrapper = new CUI.VerticalList
+			content: [
+				new CUI.Label(text:"function (objNew, objCurr, dataPath, dataPathCurr) {")
+			,
+				@renderEditor(editorBtn, tmpData)
+			,
+				new CUI.Label(text:"}")
+			]
+
 		popover = new CUI.Popover
 			element: editorBtn
 			placement: "wm"
 			class: "commonPlugin_Popover"
 			pane:
 				header_left: new CUI.Label(text: "JavaScript Code")
-				content: @renderEditor(editorBtn)
+				content: editorWrapper
 				footer_right: [
-						text: "Save"
+						text: "Apply"
 						primary: true
 						onClick: () =>
+							editorBtn.getData().script = tmpData.script
+							CUI.Events.trigger
+								node: editorBtn
+								type: "data-changed"
 							popover.destroy()
 				]
 
 		popover.show()
 
-	renderEditor: (editorBtn) ->
+	renderEditor: (editorBtn, tmpData) ->
 		editorForm = new CUI.Form
-			data: editorBtn.getData()
+			data: tmpData
 			maximize_horizontal: true
 			fields: [
 				type: CUI.CodeInput
@@ -60,13 +76,8 @@ class CustomDatamodelSettings extends SchemaPlugin
 				name: "script"
 			]
 			onDataChanged: =>
-				CUI.Events.trigger
-					node: editorBtn
-					type: "data-changed"
 
 		return editorForm.start()
-
-
 
 Schema.registerPlugin(new CustomDatamodelSettings())
 
