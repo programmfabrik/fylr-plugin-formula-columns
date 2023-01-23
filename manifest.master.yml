@@ -7,6 +7,8 @@ plugin:
     en-US: Formula Columns
   webfrontend:
     url: FormulaColumns.js
+    css: FormulaColumns.css
+
 
 base_url_prefix: "webfrontend"
 

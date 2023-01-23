@@ -1,3 +1,27 @@
 key,de-DE,en-US
 server.config.name.system.prefs,Einstellungen,Preferences
 server.config.parameter.system.prefs.viewsets.label,Viewsets,Viewsets
+formula_columns_plugin.schema.editscript.button,Edit Code,Edit Code
+formula_columns_plugin.schema.label,Formula Code,Formula Code
+formula_columns_plugin.schema.applybtn,Apply,Apply
+formula_columns_plugin.schema.cancelbtn,Cancel,Cancel
+formula_columns_plugin.editor.label,Javascript Code Editor,Javascript Code Editor
+formula_columns_plugin.editor.infotext,"## Formula Field Code
+
+If an Exception is caught the event is written using the type `FORMULA_COLUMNS_ERROR`.
+
+* `objNew`: The new data of the currently saved object. This includes the record for top level objects, the nested record for nested objects.
+* `objCurr`: This data is the data as found in the database. It represents the old / current version of the data.
+* `dataPath`: During the recursive crawling of the data, the dataPath is extended for each iteration. It contains the path to the data starting from the top level.
+* `dataPathCurr`: Same as `dataPath` but for the current object data.
+
+> A known limitation is that the callback for a nested record does not know which record idx it is currently in.","## Formula Field Code
+
+If an Exception is caught the event is written using the type `FORMULA_COLUMNS_ERROR`.
+
+* `objNew`: The new data of the currently saved object. This includes the record for top level objects, the nested record for nested objects.
+* `objCurr`: This data is the data as found in the database. It represents the old / current version of the data.
+* `dataPath`: During the recursive crawling of the data, the dataPath is extended for each iteration. It contains the path to the data starting from the top level.
+* `dataPathCurr`: Same as `dataPath` but for the current object data.
+
+> A known limitation is that the callback for a nested record does not know which record idx it is currently in."
