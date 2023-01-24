@@ -14,7 +14,7 @@ all: build ## build all
 
 
 css:
-	sass $(SCSS_FILES) build/formula-columns/webfrontend/FormulaColumns.css
+	sass --no-source-map $(SCSS_FILES) build/formula-columns/webfrontend/FormulaColumns.css
 
 code: $(JS_WEB) $(JS_SERVER) ## build Coffeescript code
 
