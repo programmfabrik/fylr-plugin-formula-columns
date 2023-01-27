@@ -1,4 +1,22 @@
+.formula-column-plugin-modal{
+  .formula-column-modal-hl {
+    width: 100%;
+    height: 100%;
+
+    .cui-code-input{
+      width: 100%;
+      height: 100%;
+    }
+  }
+  .ace_editor {
+    width: 100%;
+    height: 100%;
+    margin-left: 30px;
+  }
+}
+
 .formula-column-plugin-info-label{
   width: 400px;
   padding: 20px;
+  align-items: inherit !important;
 }

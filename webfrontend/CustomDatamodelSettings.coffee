@@ -53,6 +53,7 @@ class CustomDatamodelSettings extends SchemaPlugin
 				popover.destroy()
 
 		editorWrapper = new CUI.VerticalList
+			class: "editor-wrapper"
 			maximize: true
 			content: [
 				new CUI.Label
@@ -73,31 +74,35 @@ class CustomDatamodelSettings extends SchemaPlugin
 			centered: false
 			markdown: true
 
-		popover = new CUI.Popover
-			element: editorBtn
-			placement: "wm"
-			class: "commonPlugin_Popover"
+		modal = new CUI.Modal
+			cancel: true
+			fill_space: "both"
+			class: "formula-column-plugin-modal"
 			pane:
 				header_left: new CUI.Label(text: $$("formula_columns_plugin.editor.label"))
+				footer_right: [
+					cancelButton
+					applyButton
+				]
 				content: new CUI.HorizontalList
+					maximize: true
+					class: "formula-column-modal-hl"
 					content: [
 						editorWrapper
 					,
 						info
 					]
-				footer_right: [
-					cancelButton
-					applyButton
-				]
 
-		popover.show()
+		modal.show()
 
 	renderEditor: (editorBtn, tmpData, applyButton) ->
 		editorForm = new CUI.Form
 			data: tmpData
 			maximize_horizontal: true
+			maximize_vertical: true
 			fields: [
 				type: CUI.CodeInput
+				maximize_horizontal: true
 				mode: "javascript"
 				name: "script"
 			]
