@@ -45,12 +45,19 @@ class CustomDatamodelSettings extends SchemaPlugin
 				CUI.Events.trigger
 					node: editorBtn
 					type: "data-changed"
-				popover.destroy()
+				modal.destroy()
 
 		cancelButton = new CUI.Button
 			text: $$("formula_columns_plugin.schema.cancelbtn")
 			onClick: () =>
-				popover.destroy()
+				modal.destroy()
+
+		@__errorMessage = new LocaLabel
+			class: "ez5-editor-required-message"
+			loca_key: "editor.required_input_message"
+			group: "required"
+		requiredWrapper = CUI.dom.div("ez5-required-message")
+		CUI.dom.append(requiredWrapper, @__errorMessage)
 
 		editorWrapper = new CUI.VerticalList
 			class: "editor-wrapper"
@@ -74,6 +81,14 @@ class CustomDatamodelSettings extends SchemaPlugin
 			centered: false
 			markdown: true
 
+		infoWrapper = new CUI.VerticalList
+			class: "info-column-vl"
+			content: [
+				info
+			,
+				requiredWrapper
+			]
+
 		modal = new CUI.Modal
 			cancel: true
 			fill_space: "both"
@@ -90,9 +105,10 @@ class CustomDatamodelSettings extends SchemaPlugin
 					content: [
 						editorWrapper
 					,
-						info
+						infoWrapper
 					]
-
+					
+		@__errorMessage.hide()
 		modal.show()
 
 	renderEditor: (editorBtn, tmpData, applyButton) ->
@@ -109,8 +125,11 @@ class CustomDatamodelSettings extends SchemaPlugin
 			onDataChanged: =>
 				try
 					eval("function test(){" + tmpData.script + "}")
+					@__errorMessage.hide()
 					applyButton.enable()
 				catch e
+					@__errorMessage.show()
+					@__errorMessage.setText(e.message)
 					applyButton.disable()
 		return editorForm.start()
 
