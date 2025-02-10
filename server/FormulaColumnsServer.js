@@ -66,6 +66,9 @@ async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 	for (const colI in mask._columns) {
 		let col = mask._columns[colI]
 		let settings = col.custom_settings["formula-columns"]
+		if (settings?.disabled) {
+			continue;
+		}
 		if (settings?.script) {
 			let runScript = "async function(objNew, objCurr, dataPath, dataPathCurr) {" + settings.script + ";}"
 			let logEntry = {

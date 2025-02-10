@@ -20,6 +20,14 @@ class CustomDatamodelSettings extends SchemaPlugin
 			form:
 				label: "Debug"
 			data: pData
+			disabled: CUI.util.isEmpty(pData.script)
+		,
+			type: CUI.Checkbox
+			name: "disabled"
+			form:
+				label: "Disable"
+			data: pData
+			disabled: CUI.util.isEmpty(pData.script)
 		]
 		return fields
 
@@ -42,6 +50,11 @@ class CustomDatamodelSettings extends SchemaPlugin
 			primary: true
 			onClick: () =>
 				editorBtn.getData().script = tmpData.script
+				for k in ["debug", "disabled"]
+					if CUI.util.isEmpty(tmpData.script)
+						editorBtn.getForm().getFieldsByName(k)[0].disable()
+					else
+						editorBtn.getForm().getFieldsByName(k)[0].enable()
 				CUI.Events.trigger
 					node: editorBtn
 					type: "data-changed"
