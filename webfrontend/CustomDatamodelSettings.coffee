@@ -64,7 +64,7 @@ class CustomDatamodelSettings extends SchemaPlugin
 			maximize: true
 			content: [
 				new CUI.Label
-					text:"`function (objNew, objCurr, dataPath, dataPathCurr) {`"
+					text:"`async function (objNew, objCurr, dataPath, dataPathCurr) {`"
 					markdown: true
 			,
 				@renderEditor(editorBtn, tmpData, applyButton)
@@ -124,7 +124,7 @@ class CustomDatamodelSettings extends SchemaPlugin
 			]
 			onDataChanged: =>
 				try
-					eval("function test(){" + tmpData.script + "}")
+					eval("async function test(){" + tmpData.script + "}")
 					@__errorMessage.hide()
 					applyButton.enable()
 				catch e

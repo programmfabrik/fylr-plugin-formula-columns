@@ -1,12 +1,63 @@
 const fs = require("fs")
-console.error("welcome to formula fields2")
 const lib = require('../lib/js/lib.js')
 const info = JSON.parse(process.argv[2])
 process.stdin.setEncoding('utf8');
 
+
+// Polyfill the console.info to work as console.error
+// console.error are output in the server logs and can be read by users
+// console.log cant be used for this because it is read by the parent process as the result output
+// and its not semantically correct to use console.error for normal output in the custom user code
+console.info = console.error
+
+console.info("welcome to formula fields2")
+
+
+// Helper function to search for objects by SID.
+// This function is added to the global scope so that it can be used
+// in the custom user code (inside the eval).
+global.findObjectsBySIDs = async function(sids, mode) {
+    if (!mode) {
+		mode = "full";
+	}
+
+	if (!Array.isArray(sids)) {
+        sids = [sids];
+    }
+
+    const url = `${info.api_url}/api/v1/search`;
+
+    const requestBody = {
+        limit: 1000,
+        search: [{
+                type: "in",
+                in: sids,
+                fields: ["_system_object_id"],
+        	}]
+        ,
+        format: mode
+    };
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+            'authorization': `Bearer ${info.api_user_access_token}`
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {		
+        throw new Error(`Error fetching objects by SID: ${response.statusText}`);
+    }
+	const responseJson = await response.json();
+	//console.info("responseJson", responseJson);
+	return responseJson.objects;
+};
+
 // updateObj updates the given object obj, using the
 // provided mask.
-function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
+async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 	let changed = false
 	let dataPath2 = dataPath.slice(0)
 	dataPath2.push(objNew)
@@ -16,7 +67,7 @@ function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 		let col = mask._columns[colI]
 		let settings = col.custom_settings["formula-columns"]
 		if (settings?.script) {
-			let runScript = "function(objNew, objCurr, dataPath, dataPathCurr) {" + settings.script + ";}"
+			let runScript = "async function(objNew, objCurr, dataPath, dataPathCurr) {" + settings.script + ";}"
 			let logEntry = {
 				mask: mask,
 				objNew: objNew,
@@ -30,7 +81,7 @@ function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 				if (!settings.func) {
 					eval("settings.func = "+runScript)
 				}
-				objNew[col.name] = settings.func(objNew, objCurr, dataPath, dataPathCurr)
+				objNew[col.name] = await settings.func(objNew, objCurr, dataPath, dataPathCurr)
 				if (settings.debug) {
 					logEntry.value = objNew[col.name]
 					log.push(logEntry)
@@ -61,7 +112,7 @@ function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 					} else {
 						subMask = col._mask
 					}
-					if (updateObj(subMask, nested[i], nestedCurrI, dataPath2, dataPathCurr2, log)) {
+					if (await updateObj(subMask, nested[i], nestedCurrI, dataPath2, dataPathCurr2, log)) {
 						changed = true
 					}
 				}
@@ -85,7 +136,7 @@ Promise.all([lib.getSchema(info), lib.getStdin()]).then(
 				currObj = current[obj._objecttype]
 			}
 			// dataPath starts with top level, we already add it here
-			if (updateObj(schema[obj._objecttype], obj[obj._objecttype], currObj, [obj], [current], log)) {
+			if (await updateObj(schema[obj._objecttype], obj[obj._objecttype], currObj, [obj], [current], log)) {
 				objsChanged.push(obj)
 			}
 		}

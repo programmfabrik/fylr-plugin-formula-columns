@@ -6,22 +6,70 @@ formula_columns_plugin.schema.label,Formula Code,Formula Code
 formula_columns_plugin.schema.applybtn,Apply,Apply
 formula_columns_plugin.schema.cancelbtn,Cancel,Cancel
 formula_columns_plugin.editor.label,Javascript Code Editor,Javascript Code Editor
-formula_columns_plugin.editor.infotext,"## Formula Field Code
+formula_columns_plugin.editor.infotext,"## Formel-Feld-Code
 
-* `objNew`: The new data of the currently saved object. This includes the record for top level objects, the nested record for nested objects.
-* `objCurr`: This data is the data as found in the database. It represents the old / current version of the data.
-* `dataPath`: During the recursive crawling of the data, the dataPath is extended for each iteration. It contains the path to the data starting from the top level.
-* `dataPathCurr`: Same as `dataPath` but for the current object data.
+Dieser Code wird innerhalb einer asynchronen Funktion ausgeführt, was bedeutet, dass du `async` und `await` darin verwenden kannst.
 
-If an Exception is caught the event is written using the type `FORMULA_COLUMNS_ERROR`.
+### Argumente
 
-> A known limitation is that the callback for a nested record does not know which record idx it is currently in.","## Formula Field Code
+Diese Argumente werden an die Funktion übergeben, die der Benutzer schreiben wird:
 
-* `objNew`: The new data of the currently saved object. This includes the record for top level objects, the nested record for nested objects.
-* `objCurr`: This data is the data as found in the database. It represents the old / current version of the data.
-* `dataPath`: During the recursive crawling of the data, the dataPath is extended for each iteration. It contains the path to the data starting from the top level.
-* `dataPathCurr`: Same as `dataPath` but for the current object data.
+- `objNew`: Die neuen Daten des aktuell gespeicherten Objekts. Dies umfasst den Datensatz für oberste Objekte sowie den geschachtelten Datensatz für verschachtelte Objekte.
+- `objCurr`: Diese Daten entsprechen den in der Datenbank gespeicherten Daten. Sie repräsentieren die alte/aktuelle Version der Daten.
+- `dataPath`: Während der rekursiven Durchsuchung der Daten wird `dataPath` bei jeder Iteration erweitert. Es enthält den Pfad zu den Daten, ausgehend von der obersten Ebene.
+- `dataPathCurr`: Dasselbe wie `dataPath`, aber für die aktuellen Objektdaten.
 
-If an Exception is caught the event is written using the type `FORMULA_COLUMNS_ERROR`.
+Wenn eine Ausnahme (Exception) abgefangen wird, wird das Ereignis mit dem Typ `FORMULA_COLUMNS_ERROR` protokolliert.
 
-> A known limitation is that the callback for a nested record does not know which record idx it is currently in."
+> **Einschränkung:** Der Callback für einen geschachtelten Datensatz weiß nicht, in welchem Index des Datensatzes er sich gerade befindet.
+
+### Dienstprogramme (Utility Functions)
+
+Du kannst die folgenden Dienstfunktionen in deinem Code verwenden:
+
+  - `async findObjectsBySIDs(sids, mode)`: Diese asynchrone Funktion ermöglicht es dir, Objekte in der Instanz anhand ihrer `system_global_id` zu finden. Sie akzeptiert entweder eine einzelne `sid` oder ein Array von `sids` und unterstützt verschiedene Datenformate: `long`, `short`, `long_inheritance`, `full` und `standard`. Die Funktion gibt ein Array mit den gefundenen Objekten zurück oder ein leeres Array, wenn keine Objekte gefunden wurden.
+
+### Verfügbare Variablen
+
+Innerhalb des Codes stehen dir folgende Bereichsvariablen zur Verfügung:
+
+- `log`: Ermöglicht das Hinzufügen von Nachrichten, die in den Systemereignissen gespeichert werden.
+- `info`: Enthält instanzbezogene Informationen, wie z. B. den `apiToken` oder die `url`. Dies ist nützlich für API-Aufrufe.
+
+Um den Inhalt von `info` zu inspizieren, kannst du Folgendes verwenden:
+`log.push({""info"": info});`","## Formula Field Code
+
+This code runs within an asynchronous function, meaning you can use `async` and `await` within it.
+
+### Arguments
+
+These arguments are passed to the function that the user will write:
+
+- `objNew`: The new data of the currently saved object. This includes the record for top-level objects and the nested record for nested objects.
+- `objCurr`: This data is the data as found in the database. It represents the old/current version of the data.
+- `dataPath`: During the recursive crawling of the data, the `dataPath` is extended for each iteration. It contains the path to the data starting from the top level.
+- `dataPathCurr`: Same as `dataPath`, but for the current object data.
+
+If an Exception is caught, the event is written using the type `FORMULA_COLUMNS_ERROR`.
+
+> **Limitation:** The callback for a nested record does not know which record index it is currently in.
+
+## Utility Functions
+
+You can use the following utility functions in your code:
+
+### - `async findObjectsBySIDs(sids, mode)`:
+
+This asynchronous function allows you to find objects in the instance using their `system_global_id`. It accepts either a single `sid` or an array of `sids` and supports different data formats: `long`, `short`, `long_inheritance`, `full`, and `standard`. The function returns an array containing the found objects, or an empty array if no objects are found.
+
+### Available Variables
+
+Within the code, you have access to the following scoped variables:
+
+- `log`: Allows you to add messages that will be stored in system events.
+- `info`: Contains instance-related information, such as the `apiToken` or `url`. This is useful for making API calls.
+
+To inspect the contents of `info`, you can use:
+
+```javascript
+log.push({""info"": info});"
