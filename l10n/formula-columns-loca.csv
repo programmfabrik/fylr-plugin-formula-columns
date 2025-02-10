@@ -54,13 +54,11 @@ If an Exception is caught, the event is written using the type `FORMULA_COLUMNS_
 
 > **Limitation:** The callback for a nested record does not know which record index it is currently in.
 
-## Utility Functions
+### Utility Functions
 
 You can use the following utility functions in your code:
 
-### - `async findObjectsBySIDs(sids, mode)`:
-
-This asynchronous function allows you to find objects in the instance using their `system_global_id`. It accepts either a single `sid` or an array of `sids` and supports different data formats: `long`, `short`, `long_inheritance`, `full`, and `standard`. The function returns an array containing the found objects, or an empty array if no objects are found.
+  - `async findObjectsBySIDs(sids, mode)`: This asynchronous function allows you to find objects in the instance using their `system_global_id`. It accepts either a single `sid` or an array of `sids` and supports different data formats: `long`, `short`, `long_inheritance`, `full`, and `standard`. The function returns an array containing the found objects, or an empty array if no objects are found.
 
 ### Available Variables
 
@@ -70,6 +68,4 @@ Within the code, you have access to the following scoped variables:
 - `info`: Contains instance-related information, such as the `apiToken` or `url`. This is useful for making API calls.
 
 To inspect the contents of `info`, you can use:
-
-```javascript
-log.push({""info"": info});"
+`log.push({""info"": info});`"
