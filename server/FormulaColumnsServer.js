@@ -16,7 +16,7 @@ console.info("welcome to formula fields2")
 // Helper function to search for objects by SID.
 // This function is added to the global scope so that it can be used
 // in the custom user code (inside the eval).
-global.findObjectsBySIDs = async function(sids, mode) {
+global.apiSearchBySIDs = async function(sids, mode) {
     if (!mode) {
 		mode = "full";
 	}

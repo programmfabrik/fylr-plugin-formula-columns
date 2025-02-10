@@ -27,7 +27,7 @@ Wenn eine Ausnahme (Exception) abgefangen wird, wird das Ereignis mit dem Typ `F
 
 Du kannst die folgenden Dienstfunktionen in deinem Code verwenden:
 
-  - `async findObjectsBySIDs(sids, mode)`: Diese asynchrone Funktion ermöglicht es dir, Objekte in der Instanz anhand ihrer `system_global_id` zu finden. Sie akzeptiert entweder eine einzelne `sid` oder ein Array von `sids` und unterstützt verschiedene Datenformate: `long`, `short`, `long_inheritance`, `full` und `standard`. Die Funktion gibt ein Array mit den gefundenen Objekten zurück oder ein leeres Array, wenn keine Objekte gefunden wurden.
+  - `async apiSearchBySIDs(sids, mode)`: Diese asynchrone Funktion ermöglicht es dir, Objekte in der Instanz anhand ihrer `system_global_id` zu finden. Sie akzeptiert entweder eine einzelne `sid` oder ein Array von `sids` und unterstützt verschiedene Datenformate: `long`, `short`, `long_inheritance`, `full` und `standard`. Die Funktion gibt ein Array mit den gefundenen Objekten zurück oder ein leeres Array, wenn keine Objekte gefunden wurden.
 
 ### Verfügbare Variablen
 
@@ -58,7 +58,7 @@ If an Exception is caught, the event is written using the type `FORMULA_COLUMNS_
 
 You can use the following utility functions in your code:
 
-  - `async findObjectsBySIDs(sids, mode)`: This asynchronous function allows you to find objects in the instance using their `system_global_id`. It accepts either a single `sid` or an array of `sids` and supports different data formats: `long`, `short`, `long_inheritance`, `full`, and `standard`. The function returns an array containing the found objects, or an empty array if no objects are found.
+  - `async apiSearchBySIDs(sids, mode)`: This asynchronous function allows you to find objects in the instance using their `system_global_id`. It accepts either a single `sid` or an array of `sids` and supports different data formats: `long`, `short`, `long_inheritance`, `full`, and `standard`. The function returns an array containing the found objects, or an empty array if no objects are found.
 
 ### Available Variables
 
