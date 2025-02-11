@@ -47,11 +47,11 @@ global.apiSearchBySIDs = async function(sids, mode) {
         body: JSON.stringify(requestBody)
     });
 
-    if (!response.ok) {		
+    if (!response.ok) {
         throw new Error(`Error fetching objects by SID: ${response.statusText}`);
     }
 	const responseJson = await response.json();
-	//console.info("responseJson", responseJson);
+	// console.info("responseJson", responseJson);
 	return responseJson.objects;
 };
 
@@ -90,7 +90,8 @@ async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 					log.push(logEntry)
 				}
 			} catch (e) {
-				logEntry.error = e
+				logEntry.error = "error:"+e
+				console.info(logEntry.error)
 				log.push(logEntry)
 			}
 			changed = true
