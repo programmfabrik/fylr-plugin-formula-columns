@@ -2,7 +2,7 @@ plugin:
   name: formula-columns
   url: https://github.com/programmfabrik/fylr-plugin-formula-columns
   version: "1"
-  l10n: l10n/formula-columns-loca.csv
+  l10n: l10n/fylr-plugin-formula-columns.csv
   displayname:
     de-DE: Formula Columns
     en-US: Formula Columns

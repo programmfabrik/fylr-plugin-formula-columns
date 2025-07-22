@@ -7,11 +7,19 @@ JS_WEB = webfrontend/FormulaColumns.js
 
 SCSS_FILES = webfrontend/FormulaColumns.scss
 
+# config for Google CSV spreadsheet
+L10N = l10n/fylr-plugin-formula-columns.csv
+GKEY = 19JY9iDiKGTiNfREFaHprzM5C6mb91AG9o6-2y0jjp14
+GID_LOCA = 0
+GOOGLE_URL = https://docs.google.com/spreadsheets/u/1/d/$(GKEY)/export?format=csv&gid=
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 all: build ## build all
 
+google-csv: ## get loca CSV from google
+	curl --silent -L -o - "$(GOOGLE_URL)$(GID_LOCA)" | tr -d "\r" > $(L10N)
 
 css:
 	sass --no-source-map $(SCSS_FILES) build/formula-columns/webfrontend/FormulaColumns.css
