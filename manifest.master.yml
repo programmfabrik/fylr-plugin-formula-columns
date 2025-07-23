@@ -40,7 +40,7 @@ custom_events:
   FORMULA_COLUMNS_ERROR: {}
 
 base_config:
-  - name: user
+  - name: puser
     parameters:
       api_user:
         type: user
