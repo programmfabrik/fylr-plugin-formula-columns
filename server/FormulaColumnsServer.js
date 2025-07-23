@@ -1,6 +1,7 @@
 const fs = require("fs")
 const lib = require('../lib/js/lib.js')
 const info = JSON.parse(process.argv[2])
+let access_token
 process.stdin.setEncoding('utf8');
 
 
@@ -42,7 +43,7 @@ global.apiSearchBySIDs = async function(sids, mode) {
         method: "POST",
         headers: {
             'Content-Type': 'application/json',
-            'authorization': `Bearer ${info.api_user_access_token}`
+            'authorization': `Bearer ${access_token}`
         },
         body: JSON.stringify(requestBody)
     });
@@ -67,7 +68,7 @@ async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 		let col = mask._columns[colI]
 		let settings = col.custom_settings["formula-columns"]
 		if (settings?.disabled) {
-			continue;
+			continue
 		}
 		if (settings?.script) {
 			let runScript = "async function(objNew, objCurr, dataPath, dataPathCurr) {" + settings.script + ";}"
@@ -82,6 +83,11 @@ async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 			}
 			try {
 				if (!settings.func) {
+					if (settings.run_as_plugin_user && info.plugin_user_access_token) {
+						access_token = info.plugin_user_access_token
+					} else {
+						access_token = info.api_user_access_token
+					}
 					eval("settings.func = "+runScript)
 				}
 				objNew[col.name] = await settings.func(objNew, objCurr, dataPath, dataPathCurr)
