@@ -10,6 +10,7 @@ plugin:
     url: FormulaColumns.js
     css: FormulaColumns.css
 
+
 base_url_prefix: "webfrontend"
 
 callbacks:
@@ -19,8 +20,6 @@ callbacks:
         callback: formula_columns
     callbacks:
       formula_columns:
-        plugin_user:
-          base_config: "user.api_user"
         exec:
           service: "node"
           commands:
@@ -38,9 +37,3 @@ callbacks:
 custom_events:
   FORMULA_COLUMNS_DEBUG: {}
   FORMULA_COLUMNS_ERROR: {}
-
-base_config:
-  - name: user
-    parameters:
-      api_user:
-        type: user

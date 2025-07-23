@@ -28,13 +28,6 @@ class CustomDatamodelSettings extends SchemaPlugin
 				label: "Disable"
 			data: pData
 			disabled: CUI.util.isEmpty(pData.script)
-		,
-			type: CUI.Checkbox
-			name: "run_as_plugin_user"
-			form:
-				label: "Run as plugin user"
-			data: pData
-			disabled: CUI.util.isEmpty(pData.script)
 		]
 		return fields
 
@@ -127,7 +120,7 @@ class CustomDatamodelSettings extends SchemaPlugin
 					,
 						infoWrapper
 					]
-
+					
 		@__errorMessage.hide()
 		modal.show()
 
