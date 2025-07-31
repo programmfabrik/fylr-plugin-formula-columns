@@ -1,11 +1,11 @@
 key,de-DE,en-US,da-DK,fi-FI,sv-SE,es-ES,it-IT,ru-RU,cs-CZ,pl-PL
 server.config.name.system.prefs,Einstellungen,Preferences,,,,,,,,
 server.config.parameter.system.prefs.viewsets.label,Viewsets,Viewsets,,,,,,,,
-formula_columns_plugin.schema.editscript.button,Edit Code,Edit Code,,,,,,,,
-formula_columns_plugin.schema.label,Formula Code,Formula Code,,,,,,,,
-formula_columns_plugin.schema.applybtn,Apply,Apply,,,,,,,,
-formula_columns_plugin.schema.cancelbtn,Cancel,Cancel,,,,,,,,
-formula_columns_plugin.editor.label,Javascript Code Editor,Javascript Code Editor,,,,,,,,
+formula_columns_plugin.schema.editscript.button,"Code bearbeiten",Edit Code,,,,,,,,
+formula_columns_plugin.schema.label,"Formel-Code",Formula Code,,,,,,,,
+formula_columns_plugin.schema.applybtn,"Anwenden",Apply,,,,,,,,
+formula_columns_plugin.schema.cancelbtn,"Abbrechen",Cancel,,,,,,,,
+formula_columns_plugin.editor.label,"Javascript Code-Editor",Javascript Code Editor,,,,,,,,
 formula_columns_plugin.editor.infotext,"## Formel-Feld-Code
 
 Dieser Code wird innerhalb einer asynchronen Funktion ausgeführt, was bedeutet, dass du `async` und `await` darin verwenden kannst.
@@ -69,3 +69,7 @@ Within the code, you have access to the following scoped variables:
 
 To inspect the contents of `info`, you can use:
 `log.push({""info"": info});`",,,,,,,,
+server.config.parameter.system.user.api_user.label,"API-Benutzer",API User,,,,,,,,
+formula_columns_plugin.schema.debug,"Debug",Debug,,,,,,,,
+formula_columns_plugin.schema.disabled,"Deaktiviert",Disabled,,,,,,,,
+formula_columns_plugin.schema.as_user,"Als Benutzer-Plugin ausführen",Run as a user plugin,,,,,,,,

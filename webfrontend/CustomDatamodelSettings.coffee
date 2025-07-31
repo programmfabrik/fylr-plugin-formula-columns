@@ -18,21 +18,21 @@ class CustomDatamodelSettings extends SchemaPlugin
 			type: CUI.Checkbox
 			name: "debug"
 			form:
-				label: "Debug"
+				label: $$("formula_columns_plugin.schema.debug")
 			data: pData
 			disabled: CUI.util.isEmpty(pData.script)
 		,
 			type: CUI.Checkbox
 			name: "disabled"
 			form:
-				label: "Disable"
+				label: $$("formula_columns_plugin.schema.disabled")
 			data: pData
 			disabled: CUI.util.isEmpty(pData.script)
 		,
 			type: CUI.Checkbox
 			name: "run_as_plugin_user"
 			form:
-				label: "Run as plugin user"
+				label: $$("formula_columns_plugin.schema.as_user")
 			data: pData
 			disabled: CUI.util.isEmpty(pData.script)
 		]
