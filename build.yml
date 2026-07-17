@@ -1,0 +1,25 @@
+# Build configuration for fylr-build-plugin — the explicit build description.
+# "check" (runs with every build) warns when a manifest reference is missing
+# from the build folder.
+# All features: https://github.com/programmfabrik/fylr-build-plugin
+
+server:
+  install:
+    - server/FormulaColumnsServer.js
+    - lib
+    - l10n
+
+webfrontend:
+  # CoffeeScript 1.x, compiled + concatenated into plugin.webfrontend.url
+  # (webfrontend/FormulaColumns.js)
+  coffee1:
+    - webfrontend/CustomDatamodelSettings.coffee
+  # SCSS, compiled to same-named .css (plugin.webfrontend.css)
+  scss:
+    - webfrontend/FormulaColumns.scss
+
+loca:
+  # mastered in the plugin's own Google Sheet
+  - csv: l10n/fylr-plugin-formula-columns.csv
+    sheet: 19JY9iDiKGTiNfREFaHprzM5C6mb91AG9o6-2y0jjp14
+    gid: "0"

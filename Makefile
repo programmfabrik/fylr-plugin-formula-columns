@@ -1,50 +1,41 @@
-ZIP_NAME ?= "formula-columns.zip"
+# fylr plugins are built by fylr-build-plugin, the build driver that knows how
+# a fylr plugin is put together (compile, assemble build/, zip, seal, loca).
+# This Makefile is a thin shim for muscle memory — all logic lives in the
+# tool. @latest always resolves the tool's newest release, so plugins pick up
+# fixes without being touched; an incompatible tool change would come as a new
+# major version (import path .../v2), which is the only event that changes
+# this line.
+#
+# Tools needed (each only for the features this plugin uses):
+#   go       runs fylr-build-plugin — https://go.dev/dl/
+#   coffee   CoffeeScript 1.x:  npm install -g coffeescript@1.12.7
+#   sass     npm install -g sass
+FYLR_BUILD_PLUGIN ?= go run github.com/programmfabrik/fylr-build-plugin@latest
 
-COFFEE_FILES_WEB = \
-	webfrontend/CustomDatamodelSettings.coffee
-
-JS_WEB = webfrontend/FormulaColumns.js
-
-SCSS_FILES = webfrontend/FormulaColumns.scss
-
-# config for Google CSV spreadsheet
-L10N = l10n/fylr-plugin-formula-columns.csv
-GKEY = 19JY9iDiKGTiNfREFaHprzM5C6mb91AG9o6-2y0jjp14
-GID_LOCA = 0
-GOOGLE_URL = https://docs.google.com/spreadsheets/u/1/d/$(GKEY)/export?format=csv&gid=
+# The tool itself reads NO environment variables — everything is passed as
+# flags. The release workflow's RELEASE_TAG / ZIP_NAME env is translated into
+# flags right here.
+RELEASE_FLAGS = $(if $(RELEASE_TAG),-release "$(RELEASE_TAG)")
+ZIP_FLAGS = $(RELEASE_FLAGS) $(if $(ZIP_NAME),-out "$(ZIP_NAME)")
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 all: build ## build all
 
-google-csv: ## get loca CSV from google
-	curl --silent -L -o - "$(GOOGLE_URL)$(GID_LOCA)" | tr -d "\r" > $(L10N)
+build: ## build the plugin into build/<name>/ — loadable by fylr via plugin.paths
+	$(FYLR_BUILD_PLUGIN) build $(RELEASE_FLAGS)
 
-css:
-	sass --no-source-map $(SCSS_FILES) build/formula-columns/webfrontend/FormulaColumns.css
+zip: ## build the release zip
+	$(FYLR_BUILD_PLUGIN) zip $(ZIP_FLAGS)
 
-code: $(JS_WEB) $(JS_SERVER) ## build Coffeescript code
+loca: ## pull the loca CSV from its Google Sheets master (build.yml)
+	$(FYLR_BUILD_PLUGIN) loca
 
-build: clean code css## copy files to build folder
-	mkdir -p build/formula-columns
-	cp -r l10n build/formula-columns
-	cp -r manifest.master.yml build/formula-columns/manifest.yml
-	mkdir -p build/formula-columns/webfrontend
-	mkdir -p build/formula-columns/server
-	cp -r $(JS_WEB) build/formula-columns/webfrontend
-	cp -r server/FormulaColumnsServer.js build/formula-columns/server
-	cp -r lib build/formula-columns/
+check: ## validate the build tree against the manifest
+	$(FYLR_BUILD_PLUGIN) check
 
-clean: ## clean
-	rm -rf build
+clean: ## clean build files
+	$(FYLR_BUILD_PLUGIN) clean
 
-zip: build ## build zip file
-	cd build && zip ${ZIP_NAME} -r formula-columns/
-
-${JS_WEB}: $(subst .coffee,.coffee.js,${COFFEE_FILES_WEB})
-	mkdir -p $(dir $@)
-	cat $^ > $@
-
-%.coffee.js: %.coffee
-	coffee -b -p --compile "$^" > "$@" || ( rm -f "$@" ; false )
+.PHONY: help all build zip loca check clean
