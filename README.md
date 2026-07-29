@@ -94,6 +94,92 @@ async function fetchTodoTitle() {
 return await fetchTodoTitle();
 ```
 
+## When a formula fails
+
+A formula that throws **rejects the save** and the error is reported as a validation
+error on the field itself: the editor marks the column red and shows the message
+next to it, exactly like a failed input check.
+
+```
+Formula column **artwork.inventory_number** failed: TypeError: Cannot read properties of undefined (reading 'name')
+```
+
+The field path tells you the objecttype and the column, so with ten formula columns
+on an objecttype you no longer have to guess which one broke. For a column in a
+nested table the failing row is named (`artwork.images[2].caption`) and the nested
+field itself is marked as well, so the problem is visible even when the row is
+collapsed. Reverse nested fields are reported under the objecttype they belong to.
+
+A failure of the plugin itself — an unreachable api, a broken schema — is reported
+the same way, without a field, so the editor shows the reason instead of only "the
+plugin caused an error".
+
+A `FORMULA_COLUMNS_ERROR` event is still stored with the full log, and a column whose
+formula is known to be broken can be switched off with "Disabled" instead of blocking
+every save.
+
+> Before this, a throwing formula was swallowed: the column kept its old value and the
+> object was saved anyway, with only a line in the server log.
+
+### Throwing on purpose
+
+Because the message reaches the editor verbatim, throwing is how a formula refuses
+input. Write the message for the person saving the record, not for the log:
+
+```javascript
+if (!objNew.width || !objNew.height) {
+    throw new Error("Width and height are both needed to compute the area");
+}
+return objNew.width * objNew.height;
+```
+
+The editor marks the column and shows *"Formula column artwork.area failed: Error:
+Width and height are both needed to compute the area"*.
+
+### Failing softly
+
+When a failure should not stop the save, catch it and decide what the column gets.
+Returning the stored value is usually better than returning nothing:
+
+```javascript
+try {
+    const found = await apiSearchBySIDs(objNew.linked?._system_object_id);
+    const linked = found?.[0];
+    return linked ? linked[linked._objecttype].category : "";
+} catch (e) {
+    log.push({ column: "category_copy", error: String(e) });
+    return objCurr?.category_copy;   // keep what is already stored
+}
+```
+
+Anything pushed into `log` is written to the `FORMULA_COLUMNS_DEBUG` event when
+"Debug" is on, and to `FORMULA_COLUMNS_ERROR` when something failed.
+
+### Only compute when the input changed
+
+`objCurr` is the stored version, so an expensive lookup can be skipped when nothing
+relevant changed. On insert there is no `objCurr`, so check it before reading it:
+
+```javascript
+if (objCurr && objNew.isbn === objCurr.isbn) {
+    return objCurr.title;   // nothing changed, keep what is stored
+}
+const res = await fetch(`https://openlibrary.org/isbn/${objNew.isbn}.json`);
+if (!res.ok) {
+    throw new Error(`Lookup for ISBN ${objNew.isbn} failed: ${res.status} ${res.statusText}`);
+}
+return (await res.json()).title;
+```
+
+### Debugging
+
+`console.info` goes to the fylr server log during a real save, and to the output panel
+of the "Test" tab, which is the faster way to look at it:
+
+```javascript
+console.info("objNew", JSON.stringify(objNew));
+```
+
 ## Testing a formula
 
 The code editor has a "Test" tab which runs the formula you are writing against a

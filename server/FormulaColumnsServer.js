@@ -17,9 +17,74 @@ console.info("welcome to formula fields2")
 // Shared with the "test" extension so both run the formula against the same helpers.
 lib.installApiSearchBySIDs(info, () => access_token)
 
+const VALIDATION_ERROR_CODE = "validation.plugin.error"
+
+// feFieldName turns the internal name of a nested column into the name the
+// editor uses in a validation error path: "_nested:<objecttype>__<name>", and
+// one level deeper the parent name is repeated in it.
+function feFieldName(colName, objecttype, parentName) {
+	if (!colName.startsWith("_nested:")) {
+		return colName
+	}
+	let name = colName.substring("_nested:".length + objecttype.length + 2)
+	if (parentName && name.startsWith(parentName + "__")) {
+		name = name.substring(parentName.length + 2)
+	}
+	return name
+}
+
+// newProblems tracks where in the object the walk currently is, so a failing
+// formula can be reported with the path the editor needs to mark the field red.
+// See server/validation_errors in fylr-plugin-example for the path rules.
+function newProblems(objecttype) {
+	return {
+		list: [],
+		seen: new Set(),
+		objecttype: objecttype,
+		path: objecttype,
+		parent: null,
+		ancestors: [],
+
+		// dive returns the tracker for one row of a nested or reverse nested field
+		dive: function (col, idx) {
+			const sub = Object.create(this)
+			if (col.kind == "reverse_link") {
+				// "_reverse_nested:<objecttype>:<field>" restarts the path at the other objecttype
+				const parts = col.name.split(":")
+				sub.objecttype = parts[1]
+				sub.parent = parts[2]
+				sub.path = `${parts[1]}.${parts[2]}`
+			} else {
+				sub.parent = feFieldName(col.name, this.objecttype, this.parent)
+				sub.path = `${this.path}.${sub.parent}`
+			}
+			sub.ancestors = this.ancestors.concat(`${sub.path}[]`)
+			sub.path += `[${idx}]`
+			return sub
+		},
+
+		add: function (col, err) {
+			const field = `${this.path}.${col.name}`
+			this.push(field, `Formula column **${field}** failed: ${err}`)
+			// Mark the nested fields on the way down too, the failing row may be collapsed
+			for (const ancestor of this.ancestors) {
+				this.push(ancestor, `A formula column inside **${ancestor}** failed`)
+			}
+		},
+
+		push: function (field, message) {
+			if (this.seen.has(field)) {
+				return
+			}
+			this.seen.add(field)
+			this.list.push({ "field": field, "message": message })
+		},
+	}
+}
+
 // updateObj updates the given object obj, using the
 // provided mask.
-async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
+async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log, problems) {
 	let changed = false
 	let dataPath2 = dataPath.slice(0)
 	dataPath2.push(objNew)
@@ -60,6 +125,7 @@ async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 				logEntry.error = "error:"+e
 				console.info(logEntry.error)
 				log.push(logEntry)
+				problems.add(col, e)
 			}
 			changed = true
 			// await lib.sendDV(JSON.stringify({"col": col}))
@@ -83,7 +149,7 @@ async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 					} else {
 						subMask = col._mask
 					}
-					if (await updateObj(subMask, nested[i], nestedCurrI, dataPath2, dataPathCurr2, log)) {
+					if (await updateObj(subMask, nested[i], nestedCurrI, dataPath2, dataPathCurr2, log, problems.dive(col, i))) {
 						changed = true
 					}
 				}
@@ -93,12 +159,37 @@ async function updateObj(mask, objNew, objCurr, dataPath, dataPathCurr, log) {
 	return changed
 }
 
+// storeLog sends the collected log entries to the api as an event
+async function storeLog(log) {
+	if (log.length == 0) {
+		return
+	}
+	let evType = "FORMULA_COLUMNS_DEBUG"
+	for (var i = 0; i < log.length; i++) {
+		if (log[i].error) {
+			evType = "FORMULA_COLUMNS_ERROR"
+			break
+		}
+	}
+	await lib.storeEvent(info, {
+		"event": {
+			"type": evType,
+			"info": {
+				"log": log
+			}
+		}
+	}).then((data) => {
+		console.error(data);
+	})
+}
+
 Promise.all([lib.getSchema(info), lib.getStdin()]).then(
 	async (data) => {
 		let schema = data[0]
 		let objects = data[1].objects
 		let objsChanged = []
 		let log = []
+		let problems = []
 		for (var i = 0; i < objects.length; i++) {
 			let obj = objects[i]
 			let current = obj._current
@@ -106,36 +197,44 @@ Promise.all([lib.getSchema(info), lib.getStdin()]).then(
 			if (current) {
 				currObj = current[obj._objecttype]
 			}
+			let objProblems = newProblems(obj._objecttype)
+			// the editor expects one list of problems per object, in the same order
+			problems.push(objProblems.list)
 			// dataPath starts with top level, we already add it here
-			if (await updateObj(schema[obj._objecttype], obj[obj._objecttype], currObj, [obj], [current], log)) {
+			if (await updateObj(schema[obj._objecttype], obj[obj._objecttype], currObj, [obj], [current], log, objProblems)) {
 				objsChanged.push(obj)
 			}
 		}
+
+		// A failing formula stores a value nobody asked for, so the save is
+		// rejected and the editor shows the problem on the field itself.
+		if (problems.some((p) => p.length > 0)) {
+			console.log(JSON.stringify({
+				"code": VALIDATION_ERROR_CODE,
+				"error": "A formula column failed, see the editor for details",
+				"statuscode": 400,
+				"parameters": {
+					"problems": problems
+				}
+			}))
+			await storeLog(log)
+			process.exit(400)
+		}
+
 		// return changed objects
 		console.log(JSON.stringify({ "objects": objsChanged }))
-
-		// send event to api, if log entries exist
-		if (log.length > 0) {
-			let evType = "FORMULA_COLUMNS_DEBUG"
-			for (var i = 0; i < log.length; i++) {
-				if (log[i].error) {
-					evType = "FORMULA_COLUMNS_ERROR"
-					break
-				}
-			}
-			await lib.storeEvent(info, {
-				"event": {
-					"type": evType,
-					"info": {
-						"log": log
-					}
-				}
-			}).then((data) => {
-				console.error(data);
-			})
-		}
+		await storeLog(log)
 	}
 ).catch((e) => {
 	console.error(e)
-	process.exit(1)
+	// Without this the editor only shows that "the plugin caused an error"
+	console.log(JSON.stringify({
+		"code": VALIDATION_ERROR_CODE,
+		"error": "The formula columns plugin failed",
+		"statuscode": 400,
+		"parameters": {
+			"problems": [[{ "message": `The formula columns plugin failed: ${e}` }]]
+		}
+	}))
+	process.exit(400)
 })
