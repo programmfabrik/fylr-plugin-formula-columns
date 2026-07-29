@@ -6,6 +6,7 @@
 server:
   install:
     - server/FormulaColumnsServer.js
+    - server/FormulaColumnsTest.js
     - lib
     - l10n
 

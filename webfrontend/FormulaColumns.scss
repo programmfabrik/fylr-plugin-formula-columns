@@ -28,3 +28,115 @@
   padding: 20px;
   align-items: inherit !important;
 }
+
+.formula-column-test-vl {
+  width: 100%;
+  height: 100%;
+
+  > .cui-vertical-layout-center {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  > .cui-vertical-layout-center > .cui-buttonbar {
+    flex: none;
+    padding: 8px var(--pane-padding);
+    border-bottom: 1px solid var(--gray-300);
+  }
+}
+
+.formula-column-test-hl {
+  width: 100%;
+  flex: 1 1 auto;
+  overflow: hidden;
+
+  .formula-column-test-record,
+  .formula-column-test-detail,
+  .formula-column-test-result {
+    height: 100%;
+    overflow: hidden;
+
+    > .cui-vertical-layout-center {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+  }
+
+  .formula-column-test-record-body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .formula-column-test-detail,
+  .formula-column-test-result {
+    width: 420px;
+    flex: none;
+    border-left: 1px solid var(--gray-300);
+  }
+}
+
+.formula-column-test-title {
+  flex: none;
+  padding: 8px var(--pane-padding);
+  font-weight: var(--headings-font-weight);
+  border-bottom: 1px solid var(--gray-300);
+}
+
+.formula-column-test-editor,
+.formula-column-test-detail-body,
+.formula-column-test-result-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: var(--pane-padding);
+}
+
+.formula-column-test-single-result {
+  margin-bottom: 16px;
+}
+
+.formula-column-test-path,
+.formula-column-test-duration {
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.formula-column-test-block,
+.formula-column-test-message--warning,
+.formula-column-test-message--error {
+  margin-top: 8px;
+  padding-left: 8px;
+  border-left: 3px solid var(--gray-300);
+}
+
+.formula-column-test-block {
+  pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+.formula-column-test-block-title {
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--headings-font-weight);
+}
+
+.formula-column-test-block--success {
+  border-left-color: var(--success);
+}
+
+.formula-column-test-block--warning,
+.formula-column-test-message--warning {
+  border-left-color: var(--warning);
+}
+
+.formula-column-test-block--error,
+.formula-column-test-message--error {
+  border-left-color: var(--danger);
+}

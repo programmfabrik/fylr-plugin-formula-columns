@@ -14,47 +14,8 @@ console.info = console.error
 console.info("welcome to formula fields2")
 
 
-// Helper function to search for objects by SID.
-// This function is added to the global scope so that it can be used
-// in the custom user code (inside the eval).
-global.apiSearchBySIDs = async function(sids, mode) {
-    if (!mode) {
-		mode = "full";
-	}
-
-	if (!Array.isArray(sids)) {
-        sids = [sids];
-    }
-
-    const url = `${info.api_url}/api/v1/search`;
-
-    const requestBody = {
-        limit: 1000,
-        search: [{
-                type: "in",
-                in: sids,
-                fields: ["_system_object_id"],
-        	}]
-        ,
-        format: mode
-    };
-
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json',
-            'authorization': `Bearer ${access_token}`
-        },
-        body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-        throw new Error(`Error fetching objects by SID: ${response.statusText}`);
-    }
-	const responseJson = await response.json();
-	// console.info("responseJson", responseJson);
-	return responseJson.objects;
-};
+// Shared with the "test" extension so both run the formula against the same helpers.
+lib.installApiSearchBySIDs(info, () => access_token)
 
 // updateObj updates the given object obj, using the
 // provided mask.

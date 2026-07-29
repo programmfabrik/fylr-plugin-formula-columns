@@ -35,6 +35,26 @@ callbacks:
                 - type: "value"
                   value: "%info.json%"
 
+# POST /api/v1/plugin/extension/formula-columns/test runs a formula once
+# against a given object, without saving, for the preview in the datamodel editor.
+extensions:
+  test:
+    plugin_user:
+      base_config: "user.api_user"
+    exec:
+      service: "node"
+      commands:
+        - prog: "node"
+          stdin:
+            type: body
+          stdout:
+            type: body
+          args:
+            - type: "value"
+              value: "%_exec.pluginDir%/server/FormulaColumnsTest.js"
+            - type: "value"
+              value: "%info.json%"
+
 custom_events:
   FORMULA_COLUMNS_DEBUG: {}
   FORMULA_COLUMNS_ERROR: {}
