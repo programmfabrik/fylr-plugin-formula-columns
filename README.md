@@ -301,6 +301,9 @@ the plugin.
 zip, `make loca` pulls the localisation CSV from its Google Sheet. See
 [fylr-build-plugin](https://github.com/programmfabrik/fylr-build-plugin).
 
-When loading the built plugin from disk, point the fylr server's `plugin.paths` at
-`build/`, never at the repo root — fylr walks the path for any `manifest.yml` and the
-source manifest would collide with the built one.
+The manifest master is **`manifest.master.yml`**, as in the other fylr plugins.
+`fylr-build-plugin` insists on reading `manifest.yml` from the repo root, so the
+Makefile generates it for the run and removes it again — it is gitignored and never
+committed. That keeps the root free of a second manifest: a fylr server whose
+`plugin.paths` crawls this directory would otherwise find the plugin twice, here and
+in `build/`, and refuse to start with *"Already loaded before with the same name"*.

@@ -18,24 +18,34 @@ FYLR_BUILD_PLUGIN ?= go run github.com/programmfabrik/fylr-build-plugin@latest
 RELEASE_FLAGS = $(if $(RELEASE_TAG),-release "$(RELEASE_TAG)")
 ZIP_FLAGS = $(RELEASE_FLAGS) $(if $(ZIP_NAME),-out "$(ZIP_NAME)")
 
+# The manifest master is manifest.master.yml, like in the other fylr plugins.
+# A permanent manifest.yml in the repo root makes a fylr server whose
+# plugin.paths crawls this directory find the plugin twice — here and in
+# build/ — and refuse to start with "Already loaded before with the same name".
+# fylr-build-plugin insists on reading manifest.yml from the root, so it is
+# generated for the run and removed again, also when the tool fails.
+MANIFEST_MASTER = manifest.master.yml
+run = cp $(MANIFEST_MASTER) manifest.yml && $(FYLR_BUILD_PLUGIN) $(1); rc=$$?; rm -f manifest.yml; exit $$rc
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 all: build ## build all
 
 build: ## build the plugin into build/<name>/ — loadable by fylr via plugin.paths
-	$(FYLR_BUILD_PLUGIN) build $(RELEASE_FLAGS)
+	$(call run,build $(RELEASE_FLAGS))
 
 zip: ## build the release zip
-	$(FYLR_BUILD_PLUGIN) zip $(ZIP_FLAGS)
+	$(call run,zip $(ZIP_FLAGS))
 
 loca: ## pull the loca CSV from its Google Sheets master (build.yml)
-	$(FYLR_BUILD_PLUGIN) loca
+	$(call run,loca)
 
 check: ## validate the build tree against the manifest
-	$(FYLR_BUILD_PLUGIN) check
+	$(call run,check)
 
 clean: ## clean build files
 	$(FYLR_BUILD_PLUGIN) clean
+	rm -f manifest.yml
 
 .PHONY: help all build zip loca check clean

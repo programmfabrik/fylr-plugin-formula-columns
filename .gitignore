@@ -1,3 +1,5 @@
 /build
+# generated from manifest.master.yml while fylr-build-plugin runs, see Makefile
+/manifest.yml
 *.coffee.js
 .DS_Store
