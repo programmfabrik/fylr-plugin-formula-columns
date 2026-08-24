@@ -10,10 +10,12 @@ server:
     - l10n
 
 webfrontend:
-  # CoffeeScript 1.x, compiled + concatenated into plugin.webfrontend.url
-  # (webfrontend/FormulaColumns.js)
-  coffee1:
-    - webfrontend/CustomDatamodelSettings.coffee
+  # assembled into plugin.webfrontend.url, in this order:
+  # .coffee is compiled (CoffeeScript 1.x), .scss compiled,
+  # anything else taken verbatim
+  bundles:
+    - sources:
+        - webfrontend/CustomDatamodelSettings.coffee
   # SCSS, compiled to same-named .css (plugin.webfrontend.css)
   scss:
     - webfrontend/FormulaColumns.scss
