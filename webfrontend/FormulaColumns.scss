@@ -1,84 +1,87 @@
-.formula-column-plugin-modal{
-  .formula-column-modal-hl {
-    width: 100%;
-    height: 100%;
-
-    .cui-code-input{
-      width: 100%;
-      height: 100%;
-    }
-
-    .info-column-vl {
-      height: 100%;
-      .cui-vertical-layout-center{
-        height: 100%;
-        justify-content: space-between;
-      }
-    }
-  }
-
+.formula-column-plugin-modal {
   .ace_editor {
     width: 100%;
     height: 100%;
   }
 }
 
-.formula-column-plugin-info-label{
-  width: 400px;
-  padding: 20px;
-  align-items: inherit !important;
+.formula-column-layout {
+  > .formula-column-docs {
+    width: 360px;
+  }
+
+  > .formula-column-output {
+    width: 500px;
+  }
+
+  > .formula-column-docs,
+  > .formula-column-center,
+  > .formula-column-output {
+    min-width: 0;
+    overflow: hidden;
+  }
 }
 
-.formula-column-test-vl {
-  width: 100%;
+// Each pane scrolls on its own, the modal itself never overflows.
+.formula-column-docs-pane {
   height: 100%;
 
   > .cui-vertical-layout-center {
-    height: 100%;
     display: flex;
     flex-direction: column;
+    min-height: 0;
     overflow: hidden;
-  }
-
-  > .cui-vertical-layout-center > .cui-buttonbar {
-    flex: none;
-    padding: 8px var(--pane-padding);
-    border-bottom: 1px solid var(--gray-300);
   }
 }
 
-.formula-column-test-hl {
-  width: 100%;
-  flex: 1 1 auto;
+.formula-column-tabs .cui-tab-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   overflow: hidden;
+}
 
-  .formula-column-test-record,
-  .formula-column-test-detail,
-  .formula-column-test-result {
+.formula-column-docs-text {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: var(--pane-padding);
+  align-items: flex-start;
+}
+
+.formula-column-code {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--pane-padding);
+
+  .editor-wrapper {
     height: 100%;
-    overflow: hidden;
+    align-items: stretch;
 
-    > .cui-vertical-layout-center {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+    .cui-label {
+      align-self: flex-start;
     }
   }
 
-  .formula-column-test-record-body {
+  .cui-code-input {
+    width: 100%;
     height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
   }
+}
 
-  .formula-column-test-detail,
-  .formula-column-test-result {
-    width: 420px;
-    flex: none;
-    border-left: 1px solid var(--gray-300);
-  }
+.formula-column-test {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.formula-column-test-record-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .formula-column-test-title {
@@ -92,6 +95,7 @@
 .formula-column-test-detail-body,
 .formula-column-test-result-body {
   flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   padding: var(--pane-padding);
 }

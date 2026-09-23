@@ -74,20 +74,29 @@ class CustomDatamodelSettings extends SchemaPlugin
 			onClick: () =>
 				modal.destroy()
 
-		test.tabs = new CUI.Tabs
-			class: "formula-column-plugin-tabs"
-			absolute: true
-			tabs: [
-				name: "editor"
-				text: $$("formula_columns_plugin.editor.tab.editor", null, null, "Editor")
-				content: @renderEditorTab(editorBtn, tmpData, applyButton)
-			,
-				name: "test"
-				text: $$("formula_columns_plugin.editor.tab.test", null, null, "Test")
-				content: ""
-				onFirstActivate: =>
-					@__renderTestTab(test)
-			]
+		outputPane = @__renderOutputPane(test)
+
+		test.layout = new CUI.HorizontalLayout
+			class: "formula-column-layout"
+			left:
+				class: "formula-column-docs"
+				content: @__renderDocsPane(test)
+				flexHandle:
+					label:
+						text: $$("formula_columns_plugin.editor.docs.title", null, null, "Documentation")
+						icon: "right"
+					state_name: "formula-columns-docs"
+					closable: true
+					hidden: false
+			center:
+				class: "formula-column-center"
+				content: @__renderCenterPane(test, applyButton)
+			right:
+				class: "formula-column-output"
+				content: outputPane
+				flexHandle:
+					state_name: "formula-columns-output"
+					hidden: false
 
 		modal = new CUI.Modal
 			cancel: true
@@ -99,12 +108,107 @@ class CustomDatamodelSettings extends SchemaPlugin
 					cancelButton
 					applyButton
 				]
-				content: test.tabs
+				content: test.layout
+
+		# Capture phase, so the shortcut also works while Ace has the focus.
+		modal.DOM.addEventListener("keydown", (ev) =>
+			return if ev.key != "Enter" or not (ev.metaKey or ev.ctrlKey)
+			ev.preventDefault()
+			ev.stopPropagation()
+			@__runTest(test)
+		, true)
 
 		@__errorMessage.hide()
 		modal.show()
 
-	renderEditorTab: (editorBtn, tmpData, applyButton) ->
+	__renderDocsPane: (test) ->
+		return new CUI.SimplePane
+			class: "formula-column-docs-pane"
+			header_left: new CUI.Label(text: $$("formula_columns_plugin.editor.docs.title", null, null, "Documentation"))
+			header_right: new CUI.Button
+				icon: "left"
+				appearance: "flat"
+				tooltip: text: $$("formula_columns_plugin.editor.docs.close", null, null, "Hide documentation")
+				onClick: =>
+					test.layout.getFlexHandle("left").close()
+			content: new CUI.Label
+				class: "formula-column-docs-text"
+				text: $$("formula_columns_plugin.editor.infotext")
+				multiline: true
+				centered: false
+				markdown: true
+
+	# Center: the code or the record the formula is tested with. Right: what the
+	# formula returned or the record it leaves behind. Opening the test switches
+	# the right side to the record, going back to the code switches it back.
+	__renderCenterPane: (test, applyButton) ->
+		test.codeDOM = CUI.dom.div("formula-column-code")
+		CUI.dom.append(test.codeDOM, @renderEditorTab(test, applyButton).DOM)
+
+		test.testDOM = CUI.dom.div("formula-column-test")
+		test.testButtons = null
+		test.centerButtonsDOM = CUI.dom.div("formula-column-center-buttons")
+
+		return new CUI.Tabs
+			class: "formula-column-tabs"
+			maximize: true
+			padded: false
+			header_right: test.centerButtonsDOM
+			tabs: [
+				name: "editor"
+				text: $$("formula_columns_plugin.editor.tab.editor", null, null, "Editor")
+				content: test.codeDOM
+				onActivate: =>
+					@__showCenter(test, "editor")
+			,
+				name: "test"
+				text: $$("formula_columns_plugin.editor.tab.test", null, null, "Test")
+				content: test.testDOM
+				onActivate: =>
+					@__showCenter(test, "test")
+			]
+
+	__renderOutputPane: (test) ->
+		test.runButton = new CUI.Button
+			text: $$("formula_columns_plugin.test.run.button", null, null, "Run formula")
+			icon: "play"
+			primary: true
+			tooltip: text: if /Mac/.test(navigator.platform) then "⌘ + Enter" else "Ctrl + Enter"
+			onClick: =>
+				@__runTest(test)
+
+		@__showTestMessage(test, $$("formula_columns_plugin.test.hint", null, null,
+			"Pick a record, change the values you want to try, then run the formula."))
+
+		test.outputTabs = new CUI.Tabs
+			class: "formula-column-tabs"
+			maximize: true
+			padded: false
+			header_right: test.runButton
+			tabs: [
+				name: "result"
+				text: $$("formula_columns_plugin.test.result.title", null, null, "Formula output")
+				content: test.resultDOM
+			,
+				name: "detail"
+				text: $$("formula_columns_plugin.test.detail.title", null, null, "Resulting record")
+				content: test.detailDOM
+			]
+		return test.outputTabs
+
+	__showCenter: (test, name) ->
+		test.center = name
+		if name == "test" and not test.testRendered
+			test.testRendered = true
+			@__renderTestTab(test)
+		if name == "test"
+			CUI.dom.showElement(test.centerButtonsDOM)
+		else
+			CUI.dom.hideElement(test.centerButtonsDOM)
+		test.outputTabs.activate(if name == "test" then "detail" else "result")
+		return
+
+	renderEditorTab: (test, applyButton) ->
 		@__errorMessage = new LocaLabel
 			class: "ez5-editor-required-message"
 			loca_key: "editor.required_input_message"
@@ -112,7 +216,7 @@ class CustomDatamodelSettings extends SchemaPlugin
 		requiredWrapper = CUI.dom.div("ez5-required-message")
 		CUI.dom.append(requiredWrapper, @__errorMessage)
 
-		editorWrapper = new CUI.VerticalList
+		return new CUI.VerticalList
 			class: "editor-wrapper"
 			maximize: true
 			content: [
@@ -120,38 +224,16 @@ class CustomDatamodelSettings extends SchemaPlugin
 					text:"`async function (objNew, objCurr, dataPath, dataPathCurr) {`"
 					markdown: true
 			,
-				@renderEditor(editorBtn, tmpData, applyButton)
+				@renderEditor(test.tmpData, applyButton)
 			,
 				new CUI.Label
 					text:"`}`"
 					markdown: true
-			]
-
-		info = new CUI.Label
-			class: "formula-column-plugin-info-label"
-			text: $$("formula_columns_plugin.editor.infotext")
-			multiline: true
-			centered: false
-			markdown: true
-
-		infoWrapper = new CUI.VerticalList
-			class: "info-column-vl"
-			content: [
-				info
 			,
 				requiredWrapper
 			]
 
-		return new CUI.HorizontalList
-			maximize: true
-			class: "formula-column-modal-hl"
-			content: [
-				editorWrapper
-			,
-				infoWrapper
-			]
-
-	renderEditor: (editorBtn, tmpData, applyButton) ->
+	renderEditor: (tmpData, applyButton) ->
 		editorForm = new CUI.Form
 			data: tmpData
 			maximize_horizontal: true
@@ -194,6 +276,7 @@ class CustomDatamodelSettings extends SchemaPlugin
 			uiTable: objecttypeTable and ez5.schema.CURRENT?._table_by_name?[objecttypeTable.name]
 			columnInCurrent: !!ez5.schema.CURRENT?._table_by_id?[tableId]?._column_by_name?[columnData?.name]
 			maskName: "_all_fields"
+			center: "code"
 			object: null
 			resultObject: null
 			recordDOM: CUI.dom.div("formula-column-test-record-body")
@@ -234,14 +317,7 @@ class CustomDatamodelSettings extends SchemaPlugin
 		return table
 
 	__renderTestButtons: (test) ->
-		test.runButton = new CUI.Button
-			text: $$("formula_columns_plugin.test.run.button", null, null, "Run formula")
-			icon: "play"
-			primary: true
-			onClick: =>
-				@__runTest(test)
-
-		buttons = [test.runButton]
+		buttons = []
 
 		# An objecttype without records has nothing to pick, demo data is all we can offer.
 		if ez5.objecttypes.getObjecttypes().some((el) => el.objecttype._id == test.uiTable.table_id)
@@ -311,58 +387,16 @@ class CustomDatamodelSettings extends SchemaPlugin
 		Mask.getMaskByMaskName("_all_fields", test.uiTable.table_id)
 
 	__renderTestTab: (test) ->
-		body = test.tabs.getTab("test").getBody()
-		CUI.dom.empty(body)
+		CUI.dom.empty(test.testDOM)
 
 		if not test.uiTable
-			CUI.dom.append(body, @__renderMessage($$("formula_columns_plugin.test.no_objecttype", null, null,
+			CUI.dom.append(test.testDOM, @__renderMessage($$("formula_columns_plugin.test.no_objecttype", null, null,
 				"Save the data model once so that the formula can be tested against a record of this objecttype.")).DOM)
 			return
 
-		columns = new CUI.HorizontalList
-			maximize: true
-			class: "formula-column-test-hl"
-			content: [
-				new CUI.VerticalList
-					maximize: true
-					class: "formula-column-test-record"
-					content: [
-						test.recordDOM
-					]
-			,
-				new CUI.VerticalList
-					maximize: true
-					class: "formula-column-test-detail"
-					content: [
-						new CUI.Label
-							class: "formula-column-test-title"
-							text: $$("formula_columns_plugin.test.detail.title", null, null, "Resulting record")
-					,
-						test.detailDOM
-					]
-			,
-				new CUI.VerticalList
-					maximize: true
-					class: "formula-column-test-result"
-					content: [
-						new CUI.Label
-							class: "formula-column-test-title"
-							text: $$("formula_columns_plugin.test.result.title", null, null, "Formula output")
-					,
-						test.resultDOM
-					]
-			]
-
-		content = new CUI.VerticalList
-			maximize: true
-			class: "formula-column-test-vl"
-			content: [
-				@__renderTestButtons(test)
-			,
-				columns
-			]
-
-		CUI.dom.append(body, content.DOM)
+		test.testButtons = @__renderTestButtons(test)
+		CUI.dom.append(test.centerButtonsDOM, test.testButtons.DOM)
+		CUI.dom.append(test.testDOM, test.recordDOM)
 		@__renderRecordPane(test)
 
 	__renderRecordPane: (test) ->
@@ -430,10 +464,15 @@ class CustomDatamodelSettings extends SchemaPlugin
 		return
 
 	__runTest: (test) ->
-		# Switch first: every message below lands in the result panel of the test tab.
-		test.tabs.activate("test")
-		if not test.resultObject
+		# Without an opened test there is no record yet, the demo one is used.
+		if not test.testRendered
+			test.testRendered = true
 			@__renderTestTab(test)
+
+		if not test.resultObject
+			@__showTestMessage(test, $$("formula_columns_plugin.test.no_objecttype", null, null,
+				"Save the data model once so that the formula can be tested against a record of this objecttype."), "warning")
+			return
 
 		CUI.dom.empty(test.detailDOM)
 
