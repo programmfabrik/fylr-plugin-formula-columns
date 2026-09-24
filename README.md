@@ -37,6 +37,31 @@ async function (objNew, objCurr, dataPath, dataPathCurr) {
 
 It is executed with `eval`, wrapped in a `try..catch`.
 
+### What the formula returns
+
+The formula computes the value of **its own column only**: whatever it returns is
+stored in that column, replacing what was there. So return a value in the format of
+the column type, the same as in `/api/db`:
+
+| Column type | Return |
+| --- | --- |
+| Text | `"Some text"` |
+| Multilingual text | `{"de-DE": "Text", "en-US": "Text"}` |
+| Integer / decimal | `42` / `3.5` |
+| Boolean | `true` |
+| Date | `{"value": "2026-09-24"}` |
+
+Returning an object with the fields of the record, like `{ field: value, nested: [...] }`,
+does **not** fill those fields: the whole object would be the value of this one column.
+To compute another field, give that field its own formula. Returning nothing
+(`undefined`) empties the column.
+
+The other fields of the record are read from `objNew`:
+
+```javascript
+return objNew.first_name + " " + objNew.last_name;
+```
+
 ### Arguments
 
 * `objNew`: the new data of the object being saved — the record for top level
@@ -185,17 +210,21 @@ console.info("objNew", JSON.stringify(objNew));
 The code editor has a "Test" tab which runs the formula you are writing against a
 real record — without saving anything and without committing the schema.
 
-Pick a record with "Select record" (or keep the generated demo record), change any
-value you want to try in the editor on the left, then press "Run formula". The tab
-shows three columns:
+The popup has three columns: the documentation on the left (collapsible), the
+"Editor" and "Test" tabs in the middle, and the "Formula output" and "Resulting record"
+tabs on the right with the "Run formula" button on top. `Cmd+Enter` (`Ctrl+Enter`)
+runs the formula from anywhere in the popup, also while typing in the code editor.
 
-* **the record**, the input the formula gets, editable;
-* **the resulting record**, the detail view of the object as the formula left it — a
-  formula may write to fields other than its own column, and that is invisible in the
-  raw value;
-* **the formula output**, the value the column would get and its type, everything the
+In the "Test" tab pick a record with "Select record" (or keep the generated demo
+record) and change any value you want to try. Opening the tab switches the right
+side to the resulting record. Then run the formula:
+
+* **Resulting record** is the detail view of the object as the formula left it;
+* **Formula output** is the value the column would get and its type, everything the
   formula printed with `console.info` / `console.log`, whatever it pushed into `log`,
   the run time, and the exception with its stack if it threw.
+
+Running from the "Editor" tab without a record picked uses the demo record.
 
 The mask selector next to the buttons switches which mask the record and the result
 are rendered with, since the editor differs per mask. It only changes what is shown:

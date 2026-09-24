@@ -133,10 +133,34 @@ class CustomDatamodelSettings extends SchemaPlugin
 					test.layout.getFlexHandle("left").close()
 			content: new CUI.Label
 				class: "formula-column-docs-text"
-				text: $$("formula_columns_plugin.editor.infotext")
+				text: @__returnHelp() + "\n\n" + $$("formula_columns_plugin.editor.infotext")
 				multiline: true
 				centered: false
 				markdown: true
+
+	# The formula returns the value of its own column, not an object of fields.
+	__returnHelp: ->
+		$$("formula_columns_plugin.editor.return_help", null, null, """
+			## What the formula returns
+
+			The formula computes the value of **this column only**. Whatever you `return` is stored in the column, so return it in the format of the column type:
+
+			| Column type | Return |
+			| --- | --- |
+			| Text | `"Some text"` |
+			| Multilingual text | `{"de-DE": "Text", "en-US": "Text"}` |
+			| Integer / decimal | `42` / `3.5` |
+			| Boolean | `true` |
+			| Date | `{"value": "2026-09-24"}` |
+
+			Returning an object like `{field: value}` does **not** fill other fields. To compute another field, give that field its own formula. Returning nothing empties the column.
+
+			Read the other fields of the record from `objNew`:
+
+			```javascript
+			return objNew.first_name + " " + objNew.last_name;
+			```
+		""")
 
 	# Center: the code or the record the formula is tested with. Right: what the
 	# formula returned or the record it leaves behind. Opening the test switches
@@ -490,11 +514,11 @@ class CustomDatamodelSettings extends SchemaPlugin
 		@__mergeSystemFields(object, test.object)
 
 		test.runButton.startSpinner()
-		new CUI.XHR
-			url: "/api/v1/plugin/extension/formula-columns/test"
-			method: "POST"
-			headers:
-				Authorization: "Bearer " + ez5.session.token
+		# Not a relative url: cross-server it would hit the frontend's own server.
+		ez5.server
+			api: "/plugin/extension/formula-columns/test"
+			type: "POST"
+			handle_error: => true
 			json_data:
 				objecttype: object._objecttype
 				table_id: test.tableId
@@ -504,12 +528,13 @@ class CustomDatamodelSettings extends SchemaPlugin
 				run_as_plugin_user: !!test.settings?.run_as_plugin_user
 				object: object
 				current: test.object
-		.start()
 		.done (response) =>
 			@__renderTestResult(test, response)
 			@__renderDetail(test, response?.obj_new)
-		.fail (response, status, statusText) =>
-			@__showTestMessage(test, "**#{status} #{statusText or ""}**\n\n```\n#{JSON.stringify(response, null, 2)}\n```", "error")
+		.fail (xhr, statusText) =>
+			body = xhr?.response
+			body = JSON.stringify(body, null, 2) if not CUI.util.isString(body)
+			@__showTestMessage(test, "**#{xhr?.status} #{statusText or ""}**\n\n```\n#{body}\n```", "error")
 		.always =>
 			test.runButton.stopSpinner()
 
