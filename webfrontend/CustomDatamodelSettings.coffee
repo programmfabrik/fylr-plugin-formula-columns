@@ -269,15 +269,41 @@ class CustomDatamodelSettings extends SchemaPlugin
 				name: "script"
 			]
 			onDataChanged: =>
-				try
-					eval("async function test(){" + tmpData.script + "}")
+				error = @__syntaxError(tmpData.script)
+				if error
+					@__errorMessage.show()
+					@__errorMessage.setText(error.message)
+					applyButton.disable()
+				else
 					@__errorMessage.hide()
 					applyButton.enable()
-				catch e
-					@__errorMessage.show()
-					@__errorMessage.setText(e.message)
-					applyButton.disable()
-		return editorForm.start()
+		editorForm.start()
+		@__trustEngineSyntax(editorForm, tmpData)
+		return editorForm
+
+	__syntaxError: (script) ->
+		try
+			eval("async function test(){" + script + "}")
+			return null
+		catch e
+			return e
+
+	# Ace lints with a jshint that stops at ES2020 and flags valid code such as
+	# 1_000_000. The browser's parser decides: if it accepts the script, Ace's
+	# syntax errors are dropped, otherwise they stay to point at the line.
+	__trustEngineSyntax: (editorForm, tmpData) ->
+		session = editorForm.DOM.querySelector(".ace_editor")?.env?.editor?.getSession()
+		return if not session
+
+		# jshint also warns when it gives up parsing, that one is just as wrong
+		isSyntax = (a) => a.type == "error" or /^Unrecoverable syntax error/.test(a.text)
+
+		session.on "changeAnnotation", =>
+			annotations = session.getAnnotations()
+			return if not annotations.some(isSyntax)
+			return if @__syntaxError(tmpData.script)
+			session.setAnnotations(annotations.filter((a) => not isSyntax(a)))
+		return
 
 	# The test runs the formula server side against a real record. Everything it
 	# needs is kept per modal so two columns never share a selected record.
