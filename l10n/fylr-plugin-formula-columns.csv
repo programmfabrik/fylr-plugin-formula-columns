@@ -1,95 +1,296 @@
 key,de-DE,en-US,da-DK,fi-FI,sv-SE,es-ES,it-IT,ru-RU,cs-CZ,pl-PL
-server.config.name.system.prefs,Einstellungen,Preferences,,,,,,,,
-server.config.parameter.system.prefs.viewsets.label,Viewsets,Viewsets,,,,,,,,
-formula_columns_plugin.schema.editscript.button,Code bearbeiten,Edit Code,,,,,,,,
-formula_columns_plugin.schema.label,Formel-Code,Formula Code,,,,,,,,
-formula_columns_plugin.schema.applybtn,Anwenden,Apply,,,,,,,,
-formula_columns_plugin.schema.cancelbtn,Abbrechen,Cancel,,,,,,,,
-formula_columns_plugin.editor.label,Javascript Code-Editor,Javascript Code Editor,,,,,,,,
-formula_columns_plugin.editor.infotext,"## Formel-Feld-Code
+server.config.name.system.prefs,Einstellungen,Preferences,Indstillinger,Asetukset,,Preferencias,,,,
+server.config.parameter.system.prefs.viewsets.label,Viewsets,Viewsets,Viewsets,Viewsetit,,Viewsets,,,,
+formula_columns_plugin.schema.editscript.button,Code bearbeiten,Edit Code,Rediger kode,Muokkaa koodia,,Editar código,,,,
+formula_columns_plugin.schema.label,Formel-Code,Formula Code,Formelkode,Kaavan koodi,,Código de fórmula,,,,
+formula_columns_plugin.schema.applybtn,Anwenden,Apply,Anvend,Käytä,,Aplicar,,,,
+formula_columns_plugin.schema.cancelbtn,Abbrechen,Cancel,Annullér,Peru,,Cancelar,,,,
+formula_columns_plugin.editor.label,Javascript Code-Editor,Javascript Code Editor,Javascript-kodeeditor,Javascript-koodieditori,,Editor de código Javascript,,,,
+formula_columns_plugin.editor.infotext,"## Formel-Code
 
-Dieser Code wird innerhalb einer asynchronen Funktion ausgeführt, was bedeutet, dass du `async` und `await` darin verwenden kannst.
+Der Code wird bei jedem Speichern eines Datensatzes auf dem Server ausgeführt, innerhalb einer asynchronen Funktion: `async`, `await` und `fetch` stehen zur Verfügung.
 
 ### Argumente
 
-Diese Argumente werden an die Funktion übergeben, die der Benutzer schreiben wird:
+- `objNew`: die Daten des Datensatzes, der gespeichert wird. Bei einer Spalte einer verschachtelten Tabelle die verschachtelte Zeile.
+- `objCurr`: dieselben Daten, wie sie aktuell gespeichert sind, also die alte Version. `null` bei einem neuen Datensatz.
+- `dataPath`: der Pfad vom Datensatz der obersten Ebene bis zu `objNew`. In einer verschachtelten Zeile ist `dataPath[0]` der Datensatz der obersten Ebene.
+- `dataPathCurr`: dasselbe wie `dataPath`, für die gespeicherten Daten.
 
-- `objNew`: Die neuen Daten des aktuell gespeicherten Objekts. Dies umfasst den Datensatz für oberste Objekte sowie den geschachtelten Datensatz für verschachtelte Objekte.
-- `objCurr`: Diese Daten entsprechen den in der Datenbank gespeicherten Daten. Sie repräsentieren die alte/aktuelle Version der Daten.
-- `dataPath`: Während der rekursiven Durchsuchung der Daten wird `dataPath` bei jeder Iteration erweitert. Es enthält den Pfad zu den Daten, ausgehend von der obersten Ebene.
-- `dataPathCurr`: Dasselbe wie `dataPath`, aber für die aktuellen Objektdaten.
+> **Einschränkung:** Eine Formel einer verschachtelten Tabelle läuft einmal pro Zeile, kennt aber den Index der Zeile nicht.
 
-Wenn eine Ausnahme (Exception) abgefangen wird, wird das Ereignis mit dem Typ `FORMULA_COLUMNS_ERROR` protokolliert.
+### Fehler
 
-> **Einschränkung:** Der Callback für einen geschachtelten Datensatz weiß nicht, in welchem Index des Datensatzes er sich gerade befindet.
+Wirft die Formel einen Fehler, **wird das Speichern abgelehnt** und der Editor markiert dieses Feld mit der Meldung. So kannst du Eingaben mit einer eigenen Meldung ablehnen:
 
-### Dienstprogramme (Utility Functions)
+```javascript
+throw new Error(""Bitte eine gerade Zahl eingeben"");
+```
 
-Du kannst die folgenden Dienstfunktionen in deinem Code verwenden:
+Soll ein Fehler das Speichern nicht verhindern, fange ihn ab und gib einen Ersatzwert zurück, zum Beispiel den gespeicherten Wert: `return objCurr?.my_column;`. Fehler werden außerdem als Ereignis `FORMULA_COLUMNS_ERROR` gespeichert.
 
-  - `async apiSearchBySIDs(sids, mode)`: Diese asynchrone Funktion ermöglicht es dir, Objekte in der Instanz anhand ihrer `system_global_id` zu finden. Sie akzeptiert entweder eine einzelne `sid` oder ein Array von `sids` und unterstützt verschiedene Datenformate: `long`, `short`, `long_inheritance`, `full` und `standard`. Die Funktion gibt ein Array mit den gefundenen Objekten zurück oder ein leeres Array, wenn keine Objekte gefunden wurden.
+### Testen
 
-### Verfügbare Variablen
+Der Tab **Test** führt die Formel mit einem Datensatz aus, ohne etwas zu speichern. Was du mit `console.info` oder `console.log` ausgibst, erscheint in der Ausgabe der Formel.
 
-Innerhalb des Codes stehen dir folgende Bereichsvariablen zur Verfügung:
+### Hilfsfunktionen
 
-- `log`: Ermöglicht das Hinzufügen von Nachrichten, die in den Systemereignissen gespeichert werden.
-- `info`: Enthält instanzbezogene Informationen, wie z. B. den `apiToken` oder die `url`. Dies ist nützlich für API-Aufrufe.
+- `async apiSearchBySIDs(sids, mode)`: findet Datensätze anhand ihrer `system_global_id`. Akzeptiert eine einzelne `sid` oder ein Array und ein Format: `long`, `short`, `long_inheritance`, `full` (Standard) oder `standard`. Gibt ein Array mit den gefundenen Datensätzen zurück, oder ein leeres Array.
 
-Um den Inhalt von `info` zu inspizieren, kannst du Folgendes verwenden:
-`log.push({""info"": info});`","## Formula Field Code
+### Variablen
 
-This code runs within an asynchronous function, meaning you can use `async` and `await` within it.
+- `log`: Nachrichten, die hier hinzugefügt werden, werden in den Systemereignissen gespeichert.
+- `info`: Informationen zur Instanz wie API-Token und URL, nützlich für API-Aufrufe. Inhalt ansehen mit `log.push({""info"": info});`","## Formula code
+
+The code runs on the server every time a record is saved, inside an asynchronous function: `async`, `await` and `fetch` are available.
 
 ### Arguments
 
-These arguments are passed to the function that the user will write:
+- `objNew`: the data of the record being saved. For a column of a nested table, the nested row.
+- `objCurr`: the same data as currently stored, so the old version. `null` for a new record.
+- `dataPath`: the path from the top level record down to `objNew`. From a nested row, `dataPath[0]` is the top level record.
+- `dataPathCurr`: the same as `dataPath`, for the stored data.
 
-- `objNew`: The new data of the currently saved object. This includes the record for top-level objects and the nested record for nested objects.
-- `objCurr`: This data is the data as found in the database. It represents the old/current version of the data.
-- `dataPath`: During the recursive crawling of the data, the `dataPath` is extended for each iteration. It contains the path to the data starting from the top level.
-- `dataPathCurr`: Same as `dataPath`, but for the current object data.
+> **Limitation:** a formula of a nested table runs once per row, but does not know the index of the row.
 
-If an Exception is caught, the event is written using the type `FORMULA_COLUMNS_ERROR`.
+### Errors
 
-> **Limitation:** The callback for a nested record does not know which record index it is currently in.
+If the formula throws an error, **the save is rejected** and the editor marks this field with the message. Use it to refuse input with your own message:
 
-### Utility Functions
+```javascript
+throw new Error(""Please enter an even number"");
+```
 
-You can use the following utility functions in your code:
+When an error should not block the save, catch it and return a fallback, for example the stored value: `return objCurr?.my_column;`. Errors are also stored as `FORMULA_COLUMNS_ERROR` event.
 
-  - `async apiSearchBySIDs(sids, mode)`: This asynchronous function allows you to find objects in the instance using their `system_global_id`. It accepts either a single `sid` or an array of `sids` and supports different data formats: `long`, `short`, `long_inheritance`, `full`, and `standard`. The function returns an array containing the found objects, or an empty array if no objects are found.
+### Testing
 
-### Available Variables
+The **Test** tab runs the formula against a record without saving anything. What you print with `console.info` or `console.log` shows up in the formula output.
 
-Within the code, you have access to the following scoped variables:
+### Helper functions
 
-- `log`: Allows you to add messages that will be stored in system events.
-- `info`: Contains instance-related information, such as the `apiToken` or `url`. This is useful for making API calls.
+- `async apiSearchBySIDs(sids, mode)`: finds records by their `system_global_id`. Takes a single `sid` or an array, and a format: `long`, `short`, `long_inheritance`, `full` (the default) or `standard`. Returns an array with the records found, or an empty array.
 
-To inspect the contents of `info`, you can use:
-`log.push({""info"": info});`",,,,,,,,
-formula_columns_plugin.editor.tab.editor,Editor,Editor,,,,Editor,,,,
-formula_columns_plugin.editor.tab.test,Test,Test,,,,Prueba,,,,
-formula_columns_plugin.test.run.button,Formel ausführen,Run formula,,,,Ejecutar fórmula,,,,
-formula_columns_plugin.test.select_record.button,Datensatz auswählen,Select record,,,,Seleccionar registro,,,,
-formula_columns_plugin.test.demo_record.button,Demo-Datensatz,Demo record,,,,Registro de demostración,,,,
-formula_columns_plugin.test.detail.title,Resultierender Datensatz,Resulting record,,,,Registro resultante,,,,
-formula_columns_plugin.test.result.title,Formel-Ausgabe,Formula output,,,,Salida de la fórmula,,,,
-formula_columns_plugin.test.hint,"Wählen Sie einen Datensatz aus, ändern Sie die Werte, die Sie ausprobieren möchten, und führen Sie dann die Formel aus.","Pick a record, change the values you want to try, then run the formula.",,,,"Elige un registro, cambia los valores que quieras probar y ejecuta la fórmula.",,,,
-formula_columns_plugin.test.no_objecttype,"Speichern Sie das Datenmodell einmal, damit die Formel gegen einen Datensatz dieses Objekttyps getestet werden kann.",Save the data model once so that the formula can be tested against a record of this objecttype.,,,,Guarda el modelo de datos una vez para poder probar la fórmula contra un registro de este tipo de objeto.,,,,
-formula_columns_plugin.test.no_script,Schreiben Sie zuerst eine Formel im Editor-Tab.,Write a formula in the editor tab first.,,,,Escribe primero una fórmula en la pestaña del editor.,,,,
-formula_columns_plugin.test.record.real,Datensatz,record,,,,registro,,,,
-formula_columns_plugin.test.record.demo,generierter Demo-Datensatz,generated demo record,,,,registro de demostración generado,,,,
-formula_columns_plugin.test.unknown_column,"Diese Spalte ist noch nicht Teil des gespeicherten Datenmodells, daher wurde die Formel einmal auf den Datensatz angewendet, ohne das Ergebnis in eine Spalte zu schreiben. Speichern Sie das Datenmodell, um sie an ihrer echten Stelle zu testen.","This column is not part of the saved data model yet, so the formula was run once against the record without writing the result into a column. Save the data model to test it in its real place.",,,,"Esta columna aún no forma parte del modelo de datos guardado, así que la fórmula se ejecutó una vez sobre el registro sin escribir el resultado en ninguna columna. Guarda el modelo de datos para probarla en su sitio real.",,,,
-formula_columns_plugin.test.unknown_column.nested,"Sie gehört zu einer verschachtelten Tabelle, daher lief sie gegen den obersten Datensatz statt einmal pro verschachtelter Zeile.","It belongs to a nested table, so it ran against the top level record instead of once per nested row.",,,,"Pertenece a una tabla anidada, así que se ejecutó sobre el registro de nivel superior en lugar de una vez por fila anidada.",,,,
-formula_columns_plugin.test.not_committed,"Diese Spalte ist noch nicht übernommen, daher kann der resultierende Datensatz daneben sie nicht anzeigen. Der Wert unten ist der, den sie bekommen würde.","This column is not committed yet, so the resulting record next to this cannot show it. The value below is what it would get.",,,,"Esta columna aún no está confirmada, así que el registro resultante de al lado no puede mostrarla. El valor de abajo es el que tendría.",,,,
-formula_columns_plugin.test.value.title,Wert,Value,,,,Valor,,,,
-formula_columns_plugin.test.value.undefined,"Die Formel hat nichts zurückgegeben, die Spalte würde geleert.","The formula returned nothing, the column would be emptied.",,,,"La fórmula no ha devuelto nada, la columna se vaciaría.",,,,
-formula_columns_plugin.test.error.title,Fehler,Error,,,,Error,,,,
-formula_columns_plugin.test.console.title,Konsole,Console,,,,Consola,,,,
-formula_columns_plugin.test.log.title,log,log,,,,log,,,,
-server.config.parameter.system.user.api_user.label,API-Benutzer,API User,,,,,,,,
-formula_columns_plugin.schema.debug,Debug,Debug,,,,,,,,
-formula_columns_plugin.schema.disabled,Deaktiviert,Disabled,,,,,,,,
-formula_columns_plugin.schema.as_user,Als Benutzer-Plugin ausführen,Run as a user plugin,,,,,,,,
+### Variables
+
+- `log`: messages pushed here are stored in the system events.
+- `info`: instance information such as the api token and url, useful for api calls. Inspect it with `log.push({""info"": info});`","## Formelkode
+
+Koden køres på serveren, hver gang en post gemmes, inde i en asynkron funktion: `async`, `await` og `fetch` er tilgængelige.
+
+### Argumenter
+
+- `objNew`: dataene for den post, der gemmes. For en kolonne i en indlejret tabel er det den indlejrede række.
+- `objCurr`: de samme data, som de er gemt nu, altså den gamle version. `null` for en ny post.
+- `dataPath`: stien fra posten på øverste niveau ned til `objNew`. I en indlejret række er `dataPath[0]` posten på øverste niveau.
+- `dataPathCurr`: det samme som `dataPath`, for de gemte data.
+
+> **Begrænsning:** en formel i en indlejret tabel køres én gang pr. række, men kender ikke rækkens indeks.
+
+### Fejl
+
+Hvis formlen kaster en fejl, **afvises gemningen**, og editoren markerer dette felt med meddelelsen. Brug det til at afvise input med din egen meddelelse:
+
+```javascript
+throw new Error(""Indtast venligst et lige tal"");
+```
+
+Hvis en fejl ikke skal blokere gemningen, så fang den og returnér en reserveværdi, for eksempel den gemte værdi: `return objCurr?.my_column;`. Fejl gemmes også som hændelsen `FORMULA_COLUMNS_ERROR`.
+
+### Test
+
+Fanen **Test** kører formlen mod en post uden at gemme noget. Det, du skriver med `console.info` eller `console.log`, vises i formlens output.
+
+### Hjælpefunktioner
+
+- `async apiSearchBySIDs(sids, mode)`: finder poster ud fra deres `system_global_id`. Tager et enkelt `sid` eller et array og et format: `long`, `short`, `long_inheritance`, `full` (standard) eller `standard`. Returnerer et array med de fundne poster eller et tomt array.
+
+### Variabler
+
+- `log`: meddelelser, der tilføjes her, gemmes i systemhændelserne.
+- `info`: oplysninger om instansen såsom API-token og URL, nyttigt til API-kald. Se indholdet med `log.push({""info"": info});`","## Kaavan koodi
+
+Koodi suoritetaan palvelimella aina, kun tietue tallennetaan, asynkronisen funktion sisällä: `async`, `await` ja `fetch` ovat käytettävissä.
+
+### Argumentit
+
+- `objNew`: tallennettavan tietueen tiedot. Sisäkkäisen taulukon sarakkeessa sisäkkäinen rivi.
+- `objCurr`: samat tiedot sellaisina kuin ne on tallennettu, eli vanha versio. `null` uudelle tietueelle.
+- `dataPath`: polku ylimmän tason tietueesta `objNew`-tietoihin. Sisäkkäisellä rivillä `dataPath[0]` on ylimmän tason tietue.
+- `dataPathCurr`: sama kuin `dataPath`, tallennetuille tiedoille.
+
+> **Rajoitus:** sisäkkäisen taulukon kaava suoritetaan kerran jokaista riviä kohden, mutta se ei tiedä rivin indeksiä.
+
+### Virheet
+
+Jos kaava heittää virheen, **tallennus hylätään** ja editori merkitsee tämän kentän viestillä. Näin voit hylätä syötteen omalla viestilläsi:
+
+```javascript
+throw new Error(""Anna parillinen luku"");
+```
+
+Jos virhe ei saa estää tallennusta, ota se kiinni ja palauta varaarvo, esimerkiksi tallennettu arvo: `return objCurr?.my_column;`. Virheet tallennetaan myös tapahtumana `FORMULA_COLUMNS_ERROR`.
+
+### Testaus
+
+**Testi**-välilehti suorittaa kaavan tietueelle tallentamatta mitään. Se, mitä tulostat `console.info`- tai `console.log`-komennolla, näkyy kaavan tulosteessa.
+
+### Apufunktiot
+
+- `async apiSearchBySIDs(sids, mode)`: etsii tietueita niiden `system_global_id`-tunnisteen perusteella. Ottaa yksittäisen `sid`-tunnisteen tai taulukon sekä muodon: `long`, `short`, `long_inheritance`, `full` (oletus) tai `standard`. Palauttaa taulukon löydetyistä tietueista tai tyhjän taulukon.
+
+### Muuttujat
+
+- `log`: tähän lisätyt viestit tallennetaan järjestelmän tapahtumiin.
+- `info`: instanssin tiedot, kuten API-token ja URL, hyödyllisiä API-kutsuihin. Näet sisällön komennolla `log.push({""info"": info});`",,"## Código de la fórmula
+
+El código se ejecuta en el servidor cada vez que se guarda un registro, dentro de una función asíncrona: `async`, `await` y `fetch` están disponibles.
+
+### Argumentos
+
+- `objNew`: los datos del registro que se guarda. En una columna de una tabla anidada, la fila anidada.
+- `objCurr`: los mismos datos tal como están guardados, es decir, la versión anterior. `null` en un registro nuevo.
+- `dataPath`: la ruta desde el registro de nivel superior hasta `objNew`. En una fila anidada, `dataPath[0]` es el registro de nivel superior.
+- `dataPathCurr`: lo mismo que `dataPath`, para los datos guardados.
+
+> **Limitación:** una fórmula de una tabla anidada se ejecuta una vez por fila, pero no conoce el índice de la fila.
+
+### Errores
+
+Si la fórmula lanza un error, **se rechaza el guardado** y el editor marca este campo con el mensaje. Sirve para rechazar datos con un mensaje propio:
+
+```javascript
+throw new Error(""Introduce un número par"");
+```
+
+Si un error no debe bloquear el guardado, captúralo y devuelve un valor alternativo, por ejemplo el valor guardado: `return objCurr?.my_column;`. Los errores también se guardan como evento `FORMULA_COLUMNS_ERROR`.
+
+### Probar
+
+La pestaña **Test** ejecuta la fórmula con un registro sin guardar nada. Lo que escribas con `console.info` o `console.log` aparece en la salida de la fórmula.
+
+### Funciones auxiliares
+
+- `async apiSearchBySIDs(sids, mode)`: busca registros por su `system_global_id`. Acepta un `sid` o un array, y un formato: `long`, `short`, `long_inheritance`, `full` (por defecto) o `standard`. Devuelve un array con los registros encontrados, o un array vacío.
+
+### Variables
+
+- `log`: los mensajes que se añaden aquí se guardan en los eventos del sistema.
+- `info`: información de la instancia como el token y la url del api, útil para llamadas al api. Para ver su contenido: `log.push({""info"": info});`",,,,
+formula_columns_plugin.editor.tab.editor,Editor,Editor,Editor,Editori,,Editor,,,,
+formula_columns_plugin.editor.tab.test,Test,Test,Test,Testi,,Prueba,,,,
+formula_columns_plugin.test.run.button,Formel ausführen,Run formula,Kør formel,Suorita kaava,,Ejecutar fórmula,,,,
+formula_columns_plugin.test.select_record.button,Datensatz auswählen,Select record,Vælg post,Valitse tietue,,Seleccionar registro,,,,
+formula_columns_plugin.test.demo_record.button,Demo-Datensatz,Demo record,Demopost,Esimerkkitietue,,Registro de demostración,,,,
+formula_columns_plugin.test.detail.title,Resultierender Datensatz,Resulting record,Resulterende post,Tuloksena oleva tietue,,Registro resultante,,,,
+formula_columns_plugin.test.result.title,Formel-Ausgabe,Formula output,Formlens output,Kaavan tuloste,,Salida de la fórmula,,,,
+formula_columns_plugin.test.hint,"Wählen Sie einen Datensatz aus, ändern Sie die Werte, die Sie ausprobieren möchten, und führen Sie dann die Formel aus.","Pick a record, change the values you want to try, then run the formula.","Vælg en post, ændr de værdier, du vil afprøve, og kør formlen.","Valitse tietue, muuta arvoja, joita haluat kokeilla, ja suorita kaava.",,"Elige un registro, cambia los valores que quieras probar y ejecuta la fórmula.",,,,
+formula_columns_plugin.test.no_objecttype,"Speichern Sie das Datenmodell einmal, damit die Formel gegen einen Datensatz dieses Objekttyps getestet werden kann.",Save the data model once so that the formula can be tested against a record of this objecttype.,"Gem datamodellen én gang, så formlen kan testes mod en post af denne objekttype.","Tallenna tietomalli kerran, jotta kaavaa voidaan testata tämän objektityypin tietueella.",,Guarda el modelo de datos una vez para poder probar la fórmula contra un registro de este tipo de objeto.,,,,
+formula_columns_plugin.test.no_script,Schreiben Sie zuerst eine Formel im Editor-Tab.,Write a formula in the editor tab first.,Skriv først en formel i editor-fanen.,Kirjoita ensin kaava editori-välilehdelle.,,Escribe primero una fórmula en la pestaña del editor.,,,,
+formula_columns_plugin.test.record.real,Datensatz,record,post,tietue,,registro,,,,
+formula_columns_plugin.test.record.demo,generierter Demo-Datensatz,generated demo record,genereret demopost,luotu esimerkkitietue,,registro de demostración generado,,,,
+formula_columns_plugin.test.unknown_column,"Diese Spalte ist noch nicht Teil des gespeicherten Datenmodells, daher wurde die Formel einmal auf den Datensatz angewendet, ohne das Ergebnis in eine Spalte zu schreiben. Speichern Sie das Datenmodell, um sie an ihrer echten Stelle zu testen.","This column is not part of the saved data model yet, so the formula was run once against the record without writing the result into a column. Save the data model to test it in its real place.","Denne kolonne er endnu ikke en del af den gemte datamodel, så formlen blev kørt én gang mod posten uden at skrive resultatet i en kolonne. Gem datamodellen for at teste den på dens rigtige plads.","Tämä sarake ei vielä kuulu tallennettuun tietomalliin, joten kaava suoritettiin kerran tietueelle kirjoittamatta tulosta mihinkään sarakkeeseen. Tallenna tietomalli testataksesi sitä oikealla paikallaan.",,"Esta columna aún no forma parte del modelo de datos guardado, así que la fórmula se ejecutó una vez sobre el registro sin escribir el resultado en ninguna columna. Guarda el modelo de datos para probarla en su sitio real.",,,,
+formula_columns_plugin.test.unknown_column.nested,"Sie gehört zu einer verschachtelten Tabelle, daher lief sie gegen den obersten Datensatz statt einmal pro verschachtelter Zeile.","It belongs to a nested table, so it ran against the top level record instead of once per nested row.","Den hører til en indlejret tabel, så den blev kørt mod posten på øverste niveau i stedet for én gang pr. indlejret række.","Se kuuluu sisäkkäiseen taulukkoon, joten se suoritettiin ylimmän tason tietueelle eikä kerran jokaista sisäkkäistä riviä kohden.",,"Pertenece a una tabla anidada, así que se ejecutó sobre el registro de nivel superior en lugar de una vez por fila anidada.",,,,
+formula_columns_plugin.test.not_committed,"Diese Spalte ist noch nicht übernommen, daher kann der resultierende Datensatz daneben sie nicht anzeigen. Der Wert unten ist der, den sie bekommen würde.","This column is not committed yet, so the resulting record next to this cannot show it. The value below is what it would get.","Denne kolonne er endnu ikke bekræftet, så den resulterende post kan ikke vise den. Værdien nedenfor er den, den ville få.","Tätä saraketta ei ole vielä siirretty, joten tuloksena oleva tietue ei voi näyttää sitä. Alla oleva arvo on se, jonka se saisi.",,"Esta columna aún no está confirmada, así que el registro resultante de al lado no puede mostrarla. El valor de abajo es el que tendría.",,,,
+formula_columns_plugin.test.value.title,Wert,Value,Værdi,Arvo,,Valor,,,,
+formula_columns_plugin.test.value.undefined,"Die Formel hat nichts zurückgegeben, die Spalte würde geleert.","The formula returned nothing, the column would be emptied.","Formlen returnerede intet, kolonnen ville blive tømt.","Kaava ei palauttanut mitään, sarake tyhjennettäisiin.",,"La fórmula no ha devuelto nada, la columna se vaciaría.",,,,
+formula_columns_plugin.test.error.title,Fehler,Error,Fejl,Virhe,,Error,,,,
+formula_columns_plugin.test.console.title,Konsole,Console,Konsol,Konsoli,,Consola,,,,
+formula_columns_plugin.test.log.title,log,log,log,loki,,log,,,,
+server.config.parameter.system.user.api_user.label,API-Benutzer,API User,API-bruger,API-käyttäjä,,Usuario de la API,,,,
+formula_columns_plugin.schema.debug,Debug,Debug,Debug,Debug,,Debug,,,,
+formula_columns_plugin.schema.disabled,Deaktiviert,Disabled,Deaktiveret,Poistettu käytöstä,,Desactivado,,,,
+formula_columns_plugin.schema.as_user,Als Benutzer-Plugin ausführen,Run as a user plugin,Kør som plugin-bruger,Suorita lisäosan käyttäjänä,,Ejecutar como usuario del plugin,,,,
+formula_columns_plugin.editor.docs.title,Dokumentation,Documentation,Dokumentation,Ohjeet,,Documentación,,,,
+formula_columns_plugin.editor.docs.close,Dokumentation ausblenden,Hide documentation,Skjul dokumentation,Piilota ohjeet,,Ocultar documentación,,,,
+formula_columns_plugin.editor.return_help,"## Was die Formel zurückgibt
+
+Die Formel berechnet den Wert **nur dieser Spalte**. Was du mit `return` zurückgibst, wird in der Spalte gespeichert. Gib den Wert also im Format des Spaltentyps zurück:
+
+| Spaltentyp | Rückgabe |
+| --- | --- |
+| Text | `""Ein Text""` |
+| Mehrsprachiger Text | `{""de-DE"": ""Text"", ""en-US"": ""Text""}` |
+| Ganzzahl / Dezimalzahl | `42` / `3.5` |
+| Boolean | `true` |
+| Datum | `{""value"": ""2026-09-24""}` |
+
+Ein Objekt wie `{field: value}` füllt **keine** anderen Felder. Um ein anderes Feld zu berechnen, gib diesem Feld eine eigene Formel. Wird nichts zurückgegeben, wird die Spalte geleert.
+
+Die anderen Felder des Datensatzes liest du aus `objNew`:
+
+```javascript
+return objNew.first_name + "" "" + objNew.last_name;
+```","## What the formula returns
+
+The formula computes the value of **this column only**. Whatever you `return` is stored in the column, so return it in the format of the column type:
+
+| Column type | Return |
+| --- | --- |
+| Text | `""Some text""` |
+| Multilingual text | `{""de-DE"": ""Text"", ""en-US"": ""Text""}` |
+| Integer / decimal | `42` / `3.5` |
+| Boolean | `true` |
+| Date | `{""value"": ""2026-09-24""}` |
+
+Returning an object like `{field: value}` does **not** fill other fields. To compute another field, give that field its own formula. Returning nothing empties the column.
+
+Read the other fields of the record from `objNew`:
+
+```javascript
+return objNew.first_name + "" "" + objNew.last_name;
+```","## Hvad formlen returnerer
+
+Formlen beregner værdien af **kun denne kolonne**. Det, du returnerer med `return`, gemmes i kolonnen, så returnér det i kolonnetypens format:
+
+| Kolonnetype | Returnér |
+| --- | --- |
+| Tekst | `""En tekst""` |
+| Flersproget tekst | `{""de-DE"": ""Text"", ""en-US"": ""Text""}` |
+| Heltal / decimaltal | `42` / `3.5` |
+| Boolean | `true` |
+| Dato | `{""value"": ""2026-09-24""}` |
+
+Et objekt som `{field: value}` udfylder **ikke** andre felter. For at beregne et andet felt skal det felt have sin egen formel. Returneres der intet, tømmes kolonnen.
+
+Postens andre felter læses fra `objNew`:
+
+```javascript
+return objNew.first_name + "" "" + objNew.last_name;
+```","## Mitä kaava palauttaa
+
+Kaava laskee **vain tämän sarakkeen** arvon. Se, minkä palautat `return`-lauseella, tallennetaan sarakkeeseen, joten palauta arvo saraketyypin muodossa:
+
+| Saraketyyppi | Palautus |
+| --- | --- |
+| Teksti | `""Jokin teksti""` |
+| Monikielinen teksti | `{""de-DE"": ""Text"", ""en-US"": ""Text""}` |
+| Kokonaisluku / desimaaliluku | `42` / `3.5` |
+| Totuusarvo | `true` |
+| Päivämäärä | `{""value"": ""2026-09-24""}` |
+
+Objekti kuten `{field: value}` **ei** täytä muita kenttiä. Jos haluat laskea toisen kentän, anna sille kentälle oma kaava. Jos mitään ei palauteta, sarake tyhjennetään.
+
+Tietueen muut kentät luetaan `objNew`-muuttujasta:
+
+```javascript
+return objNew.first_name + "" "" + objNew.last_name;
+```",,"## Qué devuelve la fórmula
+
+La fórmula calcula el valor de **esta columna solamente**. Lo que devuelvas con `return` se guarda en la columna, así que devuélvelo en el formato del tipo de columna:
+
+| Tipo de columna | Valor a devolver |
+| --- | --- |
+| Texto | `""Un texto""` |
+| Texto multilingüe | `{""de-DE"": ""Text"", ""en-US"": ""Text""}` |
+| Entero / decimal | `42` / `3.5` |
+| Booleano | `true` |
+| Fecha | `{""value"": ""2026-09-24""}` |
+
+Devolver un objeto como `{field: value}` **no** rellena otros campos. Para calcular otro campo, dale a ese campo su propia fórmula. Si no se devuelve nada, la columna se vacía.
+
+Los demás campos del registro se leen de `objNew`:
+
+```javascript
+return objNew.first_name + "" "" + objNew.last_name;
+```",,,,
