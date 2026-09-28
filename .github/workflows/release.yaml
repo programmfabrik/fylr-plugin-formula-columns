@@ -35,10 +35,9 @@ jobs:
         run: make zip
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-          ZIP_NAME: ${{ github.event.repository.name }}.zip
 
       - name: Attach plugin zip to the release
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            build/${{ github.event.repository.name }}.zip
+            build/*.zip

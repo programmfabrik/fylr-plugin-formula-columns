@@ -13,10 +13,8 @@
 FYLR_BUILD_PLUGIN ?= go run github.com/programmfabrik/fylr-build-plugin@latest
 
 # The tool itself reads NO environment variables — everything is passed as
-# flags. The release workflow's RELEASE_TAG / ZIP_NAME env is translated into
-# flags right here.
+# flags. The release workflow's RELEASE_TAG env is translated into a flag here.
 RELEASE_FLAGS = $(if $(RELEASE_TAG),-release "$(RELEASE_TAG)")
-ZIP_FLAGS = $(RELEASE_FLAGS) $(if $(ZIP_NAME),-out "$(ZIP_NAME)")
 
 # The manifest master is manifest.master.yml, like in the other fylr plugins.
 # A permanent manifest.yml in the repo root makes a fylr server whose
@@ -36,7 +34,7 @@ build: ## build the plugin into build/<name>/ — loadable by fylr via plugin.pa
 	$(call run,build $(RELEASE_FLAGS))
 
 zip: ## build the release zip
-	$(call run,zip $(ZIP_FLAGS))
+	$(call run,zip $(RELEASE_FLAGS))
 
 loca: ## pull the loca CSV from its Google Sheets master (build.yml)
 	$(call run,loca)
