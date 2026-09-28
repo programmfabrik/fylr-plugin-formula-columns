@@ -142,7 +142,7 @@ return objNew.first_name + " " + objNew.last_name;
 ### Looking up linked records: `apiSearchBySIDs(sids, mode)`
 
 Finds records by their `system_global_id`. Takes a single `sid` or an array, and a
-format: `long`, `short`, `long_inheritance`, `full` or `standard` (the default).
+format: `long`, `short`, `long_inheritance`, `full` (the default) or `standard`.
 Returns the records found, or an empty array.
 
 ```javascript
