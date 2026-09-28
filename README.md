@@ -11,6 +11,8 @@ an external API, a check that refuses bad input.
   with ten formulas on an object type you see right away which one broke, and why
 * throw an error with your own message to refuse input, or catch it and keep going
 
+![The formula editor: documentation, code and output side by side](docs/images/editor.jpg)
+
 ## Requirements and installation
 
 fylr 6.34 or newer.
@@ -62,11 +64,16 @@ them refuses odd numbers.
    value `"4 is even"`. Try `7`: the output shows the error. Nothing is saved, and the
    data model does not have to be committed for this.
 
+   ![Testing a formula against a record](docs/images/test.jpg)
+
 5. **Apply**, save and commit the data model, then edit a record:
 
    * with `4` the record saves, `demo_double` is `8` and `demo_parity` is `4 is even`
-   * with `7` the save is rejected and `demo_parity` is marked with the message.
-     `demo_double` worked and is not marked, so you see which formula broke.
+   * with `7` the save is rejected: `demo_parity` is marked, and **Save not possible ›
+     Details** shows the message. `demo_double` worked and is not marked, so you see
+     which formula broke.
+
+   ![A failing formula marks its own field](docs/images/validation-error.jpg)
 
 ## The formula options
 
@@ -197,8 +204,8 @@ return (await res.json()).title;
 ## When a formula fails
 
 A formula that throws **rejects the save**, and the error is reported on the field
-itself: the editor marks the column and shows the message next to it, like a failed
-input check.
+itself: the editor marks the column like a failed input check, and lists the message
+under **Save not possible › Details**.
 
 ```
 Formula column person.demo_parity failed: Error: 7 is odd, please enter an even number
